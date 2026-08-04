@@ -13,3 +13,6 @@ __pycache__/
 
 # Regenerable pipeline artifacts (never hand-edit, never commit).
 output/
+
+# build artifacts (setuptools/uv path-dep builds)
+build/
