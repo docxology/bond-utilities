@@ -1,27 +1,18 @@
-# Data Directory — Agent Guide
+# data/ — agent guide
 
-Versioned project **inputs** only. Pipeline outputs must not be committed here.
+Versioned project **inputs** only. Generated CSVs/JSONs/PNGs belong under
+`output/` (git-ignored), never here.
 
 ## `claim_ledger.yaml`
 
-Evidence-registry for manuscript claims that are intentionally sourced from code, examples, or generated reports rather than `{{VARIABLE}}` injection.
-
-### Schema (preserve when adding rows)
-
-| Field | Purpose |
-| --- | --- |
-| `claim_id` | Stable identifier |
-| `kind` | Claim category |
-| `value` | Declared numeric or textual value |
-| `source` | Provenance (module, manuscript section, artifact) |
-| `source_tier` | Trust tier for validation |
-| `freshness` | Staleness policy |
-| `artifact_path` | Optional path to backing file |
+Evidence registry for manuscript claims sourced from code/config rather than
+`{{TOKEN}}` injection. Each row: `claim_id`, `kind`, `value`, `source`,
+`source_tier`, `freshness`, optional `artifact_path`.
 
 ## Edit protocol
 
-1. Edit only when manuscript claims, figure defaults, or source-backed numeric facts change.
-2. Re-run evidence validation / pipeline stages that consume the ledger.
-3. Do not store generated CSV/JSON/PNG under `data/`.
+1. Edit rows only when config, code defaults, or source-backed facts change.
+2. Keep values consistent with `manuscript/config.yaml` and `src/`.
+3. Never commit generated artifacts under `data/`.
 
-Quick orientation: [`README.md`](README.md).
+See [`README.md`](README.md).

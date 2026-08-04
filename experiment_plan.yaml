@@ -1,25 +1,23 @@
 conditions:
-  - name: conservative_step
+  - name: cipher_roundtrip
     role: reference
-    description: "Stable gradient-descent step below the spectral bound."
-  - name: near_optimal_step
+    description: "Every cipher must satisfy decrypt(encrypt(x)) == x on real streams (Caesar, Vigenere, one-time-pad, xor)."
+  - name: codename_determinism
     role: proposed
-    description: "Template-recommended step near the stable convergence region."
-  - name: aggressive_step
+    description: "A fixed seed must reproduce the exact codename list across runs and processes."
+  - name: schedule_window_boundary
     role: variant
-    description: "Stress condition near or above the stability boundary."
+    description: "Half-open [start, end) window semantics; closed exactly at end, durations clamp at zero."
 metrics:
   primary:
-    name: objective_value
-    direction: minimize
-protocol: "Run the deterministic quadratic optimization sweep with identical initialization, seeds, tolerance, and iteration cap across all declared step-size conditions."
+    name: roundtrip_fidelity
+    direction: maximize
+protocol: "Run the deterministic unit suite with fixed seeds and explicit `now` values; assert round-trips, byte equality, and error branches."
 expected_figures:
-  - fig:convergence_plot
-  - fig:performance_benchmark
-  - fig:step_size_sensitivity
+  - fig:schedule
 expected_tables:
-  - tbl:optimization_results
+  - tbl:mission_parameters
 baselines:
-  - conservative_step
+  - cipher_roundtrip
 ablations:
-  - aggressive_step
+  - schedule_window_boundary

@@ -1,3 +1,5 @@
-# bond-utilities skill
+# .agents/skills/bond-utilities — README
 
-> Agent skill for [`bond-utilities`](../..). Load via an AGENTS.md-aware runtime.
+Project-scoped skill for the BOND suite's shared foundation package
+(`bond-utilities`, codename Q-BRANCH). Load
+[`SKILL.md`](SKILL.md) when working inside the package.

@@ -1,5 +1,28 @@
-# Code-centric exemplar: optional monorepo adapters only.
-allow_infrastructure_imports:
-  - src/analysis/_infra.py
-  - src/_runtime.py
-  - src/benchmark_support.py
+# Layer contract — bond-utilities (Q-BRANCH)
+# The BOND suite enforces a one-directional dependency contract to keep the
+# foundation testable and mock-free.
+
+layers:
+  primitives:
+    paths: ["src/bond_utilities/{ciphers,codenames,clock,randomness,mission_io,reporting}.py"]
+    rule: "Pure primitives. No infrastructure.* imports. Deterministic whenever a seed is supplied."
+  testing_helpers:
+    path: "src/bond_utilities/testing.py"
+    rule: "Shared pytest fixtures; depends only on pytest + stdlib (never a mock framework)."
+  orchestration:
+    paths: ["src/bond_utilities/figures/", "src/bond_utilities/manuscript_variables.py"]
+    rule: "May read config and write artifacts; delegates all math to the primitives."
+  scripts:
+    path: "scripts/"
+    rule: "Thin orchestrators only; may import src.bond_utilities but hold no business logic."
+  tests:
+    path: "tests/"
+    rule: "Real data + computation only; zero mocks."
+
+enforced_by:
+  - "uv run pytest tests/ --cov=src --cov-fail-under=90"
+  - "uv run ruff check src/ scripts/"
+  - "uv run ruff format --check src/ scripts/"
+  - "uv run mypy src/ scripts/"
+
+dependency_floor: "bond-utilities imports only the standard library plus numpy, matplotlib, and pyyaml; no other bond package may be imported by it."

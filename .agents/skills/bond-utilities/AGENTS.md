@@ -1,6 +1,6 @@
 # bond-utilities skill — AGENTS.md
 
-Project-scoped skill bundle for the `bond-utilities` exemplar.
+Project-scoped skill bundle for the BOND suite's `bond-utilities` package.
 
 | File | Purpose |
 | --- | --- |
@@ -10,12 +10,9 @@ Project-scoped skill bundle for the `bond-utilities` exemplar.
 
 ## Audience
 
-Agents that need to:
-
-- Drive the in-repo exemplar end-to-end.
-- Fork this exemplar as a starting scaffold.
-- Verify layer boundaries and thin-orchestrator contracts.
+Agents building or maintaining the shared foundation that other bond packages
+import.
 
 ## Cross-refs
 
-- Project root: [`../../..`](../../../).
+- Project root: [`../../..`](../../..).

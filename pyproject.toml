@@ -1,5 +1,5 @@
-# Code Project Configuration
-# Inherits workspace settings from root pyproject.toml
+# BOND suite — bond-utilities (Layer 0, Q-BRANCH primitives)
+# Shared foundation for every bond package: stdlib + numpy/matplotlib/pyyaml only.
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -7,9 +7,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bond-utilities"
-version = "2.5.2"
+version = "0.1.0"
 license = {text = "MIT"}
-description = "Fully-tested codebase with numerical optimization and analysis"
+description = "Q-Branch field utility library: ciphers, codenames, mission clock, seeded randomness, mission records, reporting"
 authors = [
     {name = "Daniel Ari Friedman", email = "daniel@activeinference.institute"}
 ]
@@ -18,7 +18,6 @@ dependencies = [
     "numpy>=1.24.0",
     "matplotlib>=3.7.0",
     "pyyaml>=6.0",
-    "defusedxml>=0.7.1",
 ]
 
 [project.optional-dependencies]
@@ -28,17 +27,14 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-# RASP Strict Assertion: Tests must be clearly separated and structurally identifiable
 pythonpath = [".", "src"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-# `--strict-markers` prevents typos in marker definitions
 addopts = "-v --tb=short --strict-markers"
 
 [tool.coverage.run]
-# Core Template Rule: We only calculate coverage for primary source code (`src/`),
-# ensuring test code itself does not artificially inflate metric scores.
+# Coverage is measured over the whole src/ tree (the bond_utilities package).
 source = ["src"]
 branch = true
 omit = [
@@ -48,8 +44,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-# ≥90% on src/ is the enforced gate; live coverage % is tracked in
-# docs/_generated/COUNTS.md (do not hardcode it here — it drifts).
+# ≥90% line+branch on src/ is the enforced BOND quality gate.
 fail_under = 90
 show_missing = true
 precision = 2
@@ -60,4 +55,4 @@ exclude_lines = [
 ]
 
 [tool.uv]
-# Inherits workspace settings from root pyproject.toml
+# Local-only working tree; install with: uv sync --extra dev

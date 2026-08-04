@@ -6,25 +6,17 @@
       "orcid": "0000-0001-6232-9096"
     }
   ],
-  "description": "Source code for Convergence Analysis of Gradient Descent Optimization (2026).",
+  "description": "Q-Branch field utility library: ciphers, codenames, mission clock, seeded randomness, mission records, and reporting primitives for the BOND suite.",
   "keywords": [
-    "optimization algorithms",
-    "gradient descent",
-    "convergence analysis",
-    "numerical methods",
-    "mathematical programming",
-    "reproducible research",
-    "infrastructure automation"
+    "classical ciphers",
+    "deterministic codenames",
+    "mission scheduling",
+    "seeded randomness",
+    "provenance records",
+    "reproducible research"
   ],
   "license": "MIT",
-  "related_identifiers": [
-    {
-      "identifier": "10.5281/zenodo.20417136",
-      "relation": "isVersionOf",
-      "scheme": "doi"
-    }
-  ],
-  "title": "Convergence Analysis of Gradient Descent Optimization",
+  "title": "Q-Branch Field Utility Library",
   "upload_type": "software",
-  "version": "2.5.2"
+  "version": "0.1.0"
 }

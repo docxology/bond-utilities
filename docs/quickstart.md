@@ -1,89 +1,48 @@
-# Quick Start Guide
+# Quickstart — bond-utilities
 
-Get up and running with the `bond-utilities` exemplar in 5 minutes.
+A 5-minute first run.
 
-## Prerequisites
+## 1. Install
 
-- Python 3.10 or higher
-- [`uv`](https://github.com/astral-sh/uv) package manager (repo invariant — see the root `CLAUDE.md`)
-- Git
-
-## Setup (One-Time)
+From inside this package directory:
 
 ```bash
-# 1. Clone the template repository (if you haven't already)
-git clone https://github.com/docxology/template.git
-cd template
-
-# 2. Install dependencies at the repository root
-uv sync
-
-# 3. Verify installation
-uv run python --version
+uv sync --extra dev
 ```
 
-## Run the Test Suite
-
-Validate the environment and check that the project test suite passes with the ≥90% coverage gate:
+## 2. Run the tests
 
 ```bash
-uv run pytest projects/working/bond/bond-utilities/tests/ -v --tb=short
+uv run pytest tests/ --cov=src --cov-fail-under=90
 ```
 
-Expected: passing tests and coverage above the 90% gate. Live collection counts are tracked in [`../../../docs/_generated/COUNTS.md`](../../../../docs/_generated/COUNTS.md).
+Expect ≥90% line+branch coverage on `src/` (currently 100%), 0 failures.
 
-## Execute the Analysis Pipeline
-
-Generate figures, data, reports, and the analysis dashboard:
+## 3. Generate codenames
 
 ```bash
-uv run python projects/working/bond/bond-utilities/scripts/optimization_analysis.py
+uv run python scripts/generate_codenames.py --count 6 --seed 20260804
 ```
 
-**Outputs created under `projects/working/bond/bond-utilities/output/`:**
-- `figures/` — 6 PNG plots (convergence, stability, benchmarks)
-- `data/` — CSV and JSON results
-- `reports/` — HTML dashboard and validation JSON
-- `manuscript/` — token-substituted markdown sections
-- `citations/` — APA/BibTeX/MLA citations
-
-## Render the Publication PDF
-
-Convert the manuscript to a PDF with LaTeX:
+## 4. Persist a mission record
 
 ```bash
-uv run python scripts/pipeline/stage_03_render.py --project templates/bond-utilities
+uv run python scripts/record_mission.py \
+  --mission-id M-001 --payload '{"target":"grid"}' --out output/data/missions/M-001.json
 ```
 
-Final PDF: `projects/working/bond/bond-utilities/output/pdf/template_code_project_combined.pdf`
+## 5. Hydrate the manuscript
 
-## View Results
+```bash
+uv run python scripts/z_generate_manuscript_variables.py
+# writes output/data/manuscript_variables.json and output/figures/mission_schedule.png
+```
 
-- **PDF manuscript**: open `projects/working/bond/bond-utilities/output/pdf/template_code_project_combined.pdf`
-- **HTML dashboard**: open `projects/working/bond/bond-utilities/output/web/dashboard.html` (via `scripts/build_dashboard.py`)
-- **Figures**: browse `projects/working/bond/bond-utilities/output/figures/`
-- **Data**: `cat projects/working/bond/bond-utilities/output/data/optimization_results.csv`
+## Try the library
 
-## Common Next Steps
-
-- **Change step sizes**: edit `projects/working/bond/bond-utilities/manuscript/config.yaml` → `experiment.step_sizes`, then re-run steps 2–4.
-- **Add a new algorithm**: extend `src/optimizer.py`, add tests in `tests/test_optimizer.py`, and call it from the analysis script (see `docs/architecture.md`).
-- **Modify the manuscript**: edit markdown files under `projects/working/bond/bond-utilities/manuscript/`, then hydrate variables and re-render (steps 3–4).
-
-## Getting Help
-
-- **Full documentation**: [`docs/README.md`](README.md) — navigation hub
-- **Agent rules**: [`docs/agent_instructions.md`](agent_instructions.md) — critical constraints before modifying code
-- **Troubleshooting**: [`docs/troubleshooting.md`](troubleshooting.md) — common issues and fixes
-- **FAQ**: [`docs/faq.md`](faq.md)
-
-## Quick Command Reference
-
-| Task | Command |
-|---|---|
-| Run tests | `uv run pytest projects/working/bond/bond-utilities/tests/ -v` |
-| Run analysis | `uv run python projects/working/bond/bond-utilities/scripts/optimization_analysis.py` |
-| Hydrate manuscript variables | `uv run python projects/working/bond/bond-utilities/scripts/z_generate_manuscript_variables.py` (strict; requires analysis CSV; add `--allow-draft` for early drafts) |
-| Render PDF | `uv run python scripts/pipeline/stage_03_render.py --project templates/bond-utilities` |
-| Copy final deliverables | `uv run python scripts/pipeline/stage_05_copy.py --project templates/bond-utilities` |
-| Clean outputs | `rm -rf projects/working/bond/bond-utilities/output/` |
+```python
+from bond_utilities import caesar_encrypt, generate_codenames, make_rng
+print(caesar_encrypt("Q-BRANCH", 3))
+print(generate_codenames(3, seed=20260804))
+print(make_rng(20260804).random())
+```

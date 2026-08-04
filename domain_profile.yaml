@@ -1,49 +1,33 @@
-domain: code_research
-display_name: Code Research Exemplar
+domain: mission_utilities
+display_name: BOND utilities — Q-Branch Foundation
 required_packages:
   - numpy
   - matplotlib
+  - pyyaml
   - pytest
 preferred_outputs:
   - pdf
   - html
-  - docx
-  - epub
 validation_gates:
-  - experiment_method_design
   - artifact_manifest
   - evidence_grounding
-  - render_validation
-  - publication_readiness
+  - zero_mock_audit
 figure_types:
-  - convergence_plot
-  - performance_benchmark
-  - sensitivity_analysis
+  - mission_schedule
 citation_policy: official_or_scholarly
-source_policy: "Prefer primary project outputs, official package documentation, and scholarly optimization references."
+source_policy: "Prefer primary project outputs and scholarly references (Shannon, Kahn, ISO 8601)."
 review_gates:
-  - experiment_method_design
-  - render_validation
-  - publication_readiness
+  - zero_mock_audit
+  - evidence_grounding
 artifact_expectations:
   - output/data/manuscript_variables.json
-  - output/data/optimization_results.csv
-  - output/figures/convergence_plot.png
-  - output/reports/validation_report.json
-  - output/pdf/template_code_project_combined.pdf
+  - output/figures/mission_schedule.png
 benchmark_rubric:
-  name: code-research-readiness
+  name: bond-foundation-readiness
   dimensions:
-    - name: output_validity
+    - name: determinism
       weight: 1.0
-    - name: reproducibility_bundle
+    - name: roundtrip_fidelity
       weight: 1.0
-    - name: artifact_manifest
+    - name: provenance
       weight: 1.0
-    - name: evidence_grounding
-      weight: 2.0
-    - name: render_success
-      weight: 1.0
-    - name: publication_readiness
-      weight: 1.0
-llm_prompt_guidance: "Use generated optimization artifacts and manuscript variables as the evidence source; do not invent numeric results."

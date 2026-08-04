@@ -1,57 +1,40 @@
 claims:
-  - claim_id: figure-export-dpi
-    kind: number
-    value: 300
-    source: projects/working/bond/bond-utilities/src/viz_config.py plotting defaults (dpi)
+  - claim_id: mission-codename
+    kind: string
+    value: "Q-BRANCH"
+    source: manuscript/config.yaml mission.codename
     source_tier: project_source
     freshness: active
-    artifact_path: output/figures/convergence_plot.png
-  - claim_id: step-size-sensitivity-cap
+    artifact_path: manuscript/config.yaml
+  - claim_id: default-seed
     kind: number
-    value: 500
-    source: projects/working/bond/bond-utilities/src/sweeps.py sensitivity_sweep max_iter cap
+    value: 20260804
+    source: manuscript/config.yaml mission.default_seed
+    source_tier: project_source
+    freshness: active
+    artifact_path: manuscript/config.yaml
+  - claim_id: cipher-count
+    kind: number
+    value: 4
+    source: src/bond_utilities/ciphers.py CIPHER_NAMES length
+    source_tier: project_source
+    freshness: active
+  - claim_id: wordlist-size
+    kind: number
+    value: 144
+    source: src/bond_utilities/codenames.py len(ADJECTIVES) * len(NOUNS)
+    source_tier: project_source
+    freshness: active
+  - claim_id: schedule-window-hours
+    kind: number
+    value: 144.0
+    source: manuscript/config.yaml mission.schedule (2026-08-04T00:00:00Z -> 2026-08-10T00:00:00Z)
     source_tier: generated_metric
     freshness: active
-    artifact_path: output/figures/step_size_sensitivity.png
-  - claim_id: stability-log-lower
-    kind: number
-    value: -6
-    source: projects/working/bond/bond-utilities/src/figures/scientific_stability.py stability visualization caption
-    source_tier: project_source
-    freshness: active
-    artifact_path: output/figures/stability_analysis.png
-  - claim_id: solution-relative-error-exponent
-    kind: number
-    value: -4
-    source: projects/working/bond/bond-utilities/manuscript/03_results.md stated precision threshold
-    source_tier: manuscript_claim
-    freshness: active
     artifact_path: manuscript/03_results.md
-  - claim_id: stability-log-upper
-    kind: number
-    value: -9
-    source: projects/working/bond/bond-utilities/src/figures/scientific_stability.py stability visualization caption
+  - claim_id: otp-key-length-rule
+    kind: string
+    value: "one-time-pad key length must be >= data length"
+    source: src/bond_utilities/ciphers.py one_time_pad guard
     source_tier: project_source
     freshness: active
-    artifact_path: output/figures/stability_analysis.png
-  - claim_id: benchmark-tolerance-exponent
-    kind: number
-    value: -10
-    source: projects/working/bond/bond-utilities/scripts/optimization_analysis.py dimensional benchmark tolerance
-    source_tier: project_source
-    freshness: active
-    artifact_path: output/figures/performance_benchmark.png
-  - claim_id: benchmark-min-iterations
-    kind: number
-    value: 219
-    source: projects/working/bond/bond-utilities/manuscript/03_results.md benchmark caption
-    source_tier: manuscript_claim
-    freshness: active
-    artifact_path: output/figures/performance_benchmark.png
-  - claim_id: benchmark-max-iterations
-    kind: number
-    value: 238
-    source: projects/working/bond/bond-utilities/manuscript/03_results.md benchmark caption
-    source_tier: manuscript_claim
-    freshness: active
-    artifact_path: output/figures/performance_benchmark.png

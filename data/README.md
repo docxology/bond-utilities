@@ -1,13 +1,4 @@
-# bond-utilities/data
+# data/
 
-Project-maintained **inputs** for the code exemplar (not pipeline outputs).
-
-## Quick reference
-
-| File | Role |
-| --- | --- |
-| `claim_ledger.yaml` | Source-backed numeric and artifact claims for evidence validation |
-
-Generated analysis outputs belong under `output/` during pipeline runs, not here.
-
-Schema and edit protocol: [`AGENTS.md`](AGENTS.md).
+Versioned inputs for bond-utilities. Holds `claim_ledger.yaml` (evidence
+registry). Generated artifacts live under `output/`, not here.
