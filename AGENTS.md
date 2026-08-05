@@ -16,7 +16,7 @@ ever pushed.
 | Surface | Rule |
 | --- | --- |
 | `src/bond_utilities/*.py` | Pure primitives. No `infrastructure.*` imports; deterministic whenever a seed is supplied. |
-| `src/bond_utilities/testing.py` | Shared fixtures; depends only on `pytest` + stdlib (never a mock framework). |
+| `src/bond_utilities/testing.py` | Shared fixtures + helpers; depends only on `pytest` + stdlib (never a mock framework). |
 | `src/bond_utilities/figures/`, `manuscript_variables.py` | Orchestration: read config, write artifacts, delegate math to primitives. |
 | `scripts/` | Thin orchestrators only. |
 | `tests/` | Real data + computation only; **zero mocks**. |
@@ -35,7 +35,7 @@ matplotlib + pyyaml`, `tests/ → src/`. See
 | [`src/bond_utilities/randomness.py`](src/bond_utilities/randomness.py) | Seeded RNG factory, `seeded` helper, seeded scalar/sequence draws |
 | [`src/bond_utilities/mission_io.py`](src/bond_utilities/mission_io.py) | JSON/YAML records, schema validation, provenance persistence + verify/append/summary |
 | [`src/bond_utilities/reporting.py`](src/bond_utilities/reporting.py) | Plain-text table/KV/banner/schedule-table output for thin CLIs |
-| [`src/bond_utilities/testing.py`](src/bond_utilities/testing.py) | Shared pytest fixtures/helpers |
+| [`src/bond_utilities/testing.py`](src/bond_utilities/testing.py) | Two shared pytest fixtures (`seeded_rng`, `mission_record`) + two plain helpers (`temp_dir`, `seeded_codenames`) |
 | [`src/bond_utilities/manuscript_variables.py`](src/bond_utilities/manuscript_variables.py) | `{{TOKEN}}` map from `manuscript/config.yaml` |
 | [`src/bond_utilities/figures/plots.py`](src/bond_utilities/figures/plots.py) | Schedule + letter-frequency figures |
 
@@ -63,16 +63,30 @@ assert xor_bytes(xor_bytes(payload, key), key) == payload
 ### Cryptanalysis
 
 ```python
-from bond_utilities import caesar_break, vigenere_encrypt, vigenere_break
+from bond_utilities import caesar_break, caesar_encrypt, vigenere_encrypt, vigenere_break
 from bond_utilities.ciphers import kasiski_key_lengths, index_of_coincidence
 
-ciphertext = caesar_encrypt("THEQUICKBROWNFOXJUMPS", 7)
-shift, plaintext = caesar_break(ciphertext)     # (7, 'THEQUICKBROWNFOXJUMPS')
+# Both breakers are statistical, so both need a letter-rich sample.
+sample = (
+    "THEQUICKBROWNFOXJUMPSOVERTHELAZYDOGANDTHENGATHERSGRACEFULACORNS"
+    "FROMEVERYMAPLETREEBYTHERIVERBANKWHILETHEHUNTERSLEEPSSILENTLYIN"
+    "THESHADOWOFTHECASTLECLOCKTOWERCOUNTINGTHEMINUTESUNTILTHEDAWN"
+    "BREAKSOVERHORIZON"
+)                                               # 202 letters
 
-vig = vigenere_encrypt("THEQUICKBROWNFOXJUMPS", "LEMON")
-key, decoded = vigenere_break(vig, 5)           # recover the keyword + plaintext
-print(kasiski_key_lengths(vig), index_of_coincidence(vig))
+shift, plaintext = caesar_break(caesar_encrypt(sample, 7))  # shift == 7, plaintext == sample
+vig = vigenere_encrypt(sample, "LEMON")
+key, decoded = vigenere_break(vig, 5)           # key == 'LEMON', decoded == sample
+print(kasiski_key_lengths(vig)[0], index_of_coincidence(vig))
 ```
+
+**Short samples return a confident wrong answer.** On the 21-letter
+`"THEQUICKBROWNFOXJUMPS"`, `caesar_break` of a shift-7 ciphertext returns
+`(8, 'SGDPTHBJAQNVMENWITLOR')`, and `vigenere_break(..., 5)` of the same
+ciphertext returns the key `'MTSMQ'`. Neither function reports confidence, so
+the recovery claim holds only for letter-rich text.
+[`tests/test_documented_examples.py`](tests/test_documented_examples.py)
+asserts both the successes and these two failures.
 
 ### Codenames (deterministic)
 
@@ -162,8 +176,12 @@ by the next commit, and a stale number in an AGENTS file is worse than none.
 Falsifiable guards in the suite (details in
 [`docs/testing_philosophy.md`](docs/testing_philosophy.md)): manuscript token
 cross-reference, hand-authored-numeral guard with a positive control,
-`__all__` completeness, `SEEDED_HELPERS` registry drift, provenance mutation
-rejection, figure byte-determinism, and CLI flag behaviour.
+`__all__` completeness, registry-drift binding for `SEEDED_HELPERS`,
+`CIPHER_NAMES`, `CRYPTANALYSIS_HELPERS` and `CODENAME_SCHEMES`, provenance
+mutation rejection, byte-determinism for *both* figures, documented-example
+verification (every worked example in this file, the README and the quickstart
+is executed and its quoted output is required to appear verbatim), and CLI flag
+behaviour.
 
 ## Scripts
 

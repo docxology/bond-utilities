@@ -11,11 +11,18 @@ algorithms.
 
 ## Cryptanalysis demos
 
-For an English plaintext, `caesar_break` recovers the exact shift and
-plaintext; `vigenere_break` recovers a keyword of known length and decrypts.
-`kasiski_key_lengths` returns the true key length among its candidates for
-repeated plaintext, and `index_of_coincidence` cleanly separates repetitive
-(more-structured) text from uniform random text. The figure
+Both breakers are statistical, and their accuracy is a function of sample
+length rather than a guarantee. On the letter-rich English samples used in
+`tests/test_documented_examples.py`, `caesar_break` recovers the exact shift and
+plaintext, and `vigenere_break` recovers a keyword of known length and
+decrypts. On short samples both return a wrong answer with no confidence
+signal: a sixteen-letter English plaintext enciphered at a known shift comes
+back under a different shift, and the twenty-one-letter case fails likewise for
+both breakers. Those failures are asserted as tests, not merely noted, so the
+qualification cannot quietly stop being true. `kasiski_key_lengths` returns the
+true key length among its candidates for repeated plaintext, and
+`index_of_coincidence` cleanly separates repetitive (more-structured) text from
+uniform random text. The figure
 `[@fig:freq]` shows the A-Z counts of the mission codename sample.
 
 ![Letter frequency of the codename sample.](../output/figures/letter_frequency.png){#fig:freq width=70%}
@@ -33,9 +40,18 @@ An alliterative sample under the same seed:
 
 > {{RESULT_SCHEME_SAMPLE}}
 
+That alliterative sample repeats: it holds {{RESULT_SCHEME_DISTINCT}} distinct
+names across {{CONFIG_NUM_CODENAMES}} slots. That is the scheme working as
+specified, not a bug — `alliterative` seeds each index independently rather
+than sampling without replacement, and the bundled word lists share only
+{{ALLITERATIVE_INITIALS}} initials between adjectives and nouns, admitting
+{{ALLITERATIVE_CAPACITY}} distinct pairs in total. Collisions are therefore
+likely in any batch of that size, and a test asserts that this sample contains
+one. Callers needing distinct names must use the default scheme.
+
 The scheme registry holds {{CODENAME_SCHEME_COUNT}} entries
-({{CODENAME_SCHEMES}}); the alliterative scheme yields ADJ-NOUN pairs sharing
-an initial. The default scheme draws without replacement from a
+({{CODENAME_SCHEMES}}); each is bound to a real dispatch branch by a
+registry-drift test. The default scheme draws without replacement from a
 {{WORDLIST_SIZE}} adjective/noun grid, so its capacity is
 {{WORDLIST_CAPACITY}} unique pairs — `generate_codenames` raises above that
 count rather than repeating a name.

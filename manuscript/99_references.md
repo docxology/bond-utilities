@@ -24,8 +24,14 @@ the substitution and transposition families in `ciphers.py`.
 
 **[friedman_1922]** W. F. Friedman, "The Index of Coincidence and Its
 Applications in Cryptography," *Riverbank Laboratories Publication* No. 22,
-1922. — The statistic implemented by `ciphers.index_of_coincidence()`, used by
-`ciphers.vigenere_break()` to score candidate key lengths.
+1922. — The statistic implemented by `ciphers.index_of_coincidence()` and
+reported by `scripts/cryptanalyze.py`, where it is a human-facing diagnostic for
+distinguishing monoalphabetic from polyalphabetic ciphertext. To be exact about
+the code: `ciphers.vigenere_break()` does **not** consult the IC — it takes the
+key length as a required argument and breaks each column with
+`ciphers.caesar_break()` (chi-squared). Candidate key lengths come from
+`ciphers.kasiski_key_lengths()`. IC-based key-length estimation is not
+implemented in this package.
 
 **[kasiski_1863]** F. Kasiski, *Die Geheimschriften und die Dechiffrir-Kunst*,
 E. S. Mittler und Sohn, Berlin, 1863. — Repeated n-gram distance voting for
@@ -46,9 +52,11 @@ secure.
 
 **[iso8601]** International Organization for Standardization, *ISO 8601-1:2019 —
 Date and Time — Representations for Information Interchange*, 2019. — The
-timestamp format parsed by `clock.parse_timestamp()` (accepting a trailing
-`Z`) and written by `mission_io.append_outcome()` into every mission-outcome
-provenance record.
+timestamp format parsed by `clock.parse_timestamp()` (accepting a trailing `Z`)
+and written by `mission_io.record_provenance_outcome()` into each record's
+`started_at` field via `datetime.isoformat()`. `mission_io.append_outcome()`
+writes no timestamp of its own — it merges outcomes and leaves the existing
+record's timestamps and provenance block untouched.
 
 ## Suite context
 

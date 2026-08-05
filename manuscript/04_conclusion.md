@@ -2,10 +2,15 @@
 
 `bond-utilities` (codename **{{MISSION_CODENAME}}**) delivers a broadened,
 fully-tested, dependency-light foundation on which the rest of the BOND suite
-is built. Every number quoted in this manuscript is generated from
-`manuscript/config.yaml` through `src/bond_utilities/manuscript_variables.py`
-— none is hand-authored in prose — so the manuscript tracks the code without
-drift.
+is built. Every quantity this manuscript claims about the package is generated
+from `manuscript/config.yaml` and the live registries through
+`src/bond_utilities/manuscript_variables.py`, and three tests enforce it: token
+cross-reference, a bare-numeral guard over the quantitative sections, and a
+hand-copied-metric guard that fails if any section anywhere writes a generated
+value as a literal. The constants that define an algorithm — the modular base,
+the digraph square size, the reference index-of-coincidence values — are
+written literally in the methodology and scope sections, because they describe
+the mathematics rather than measure this package.
 
 The guarantees that matter for downstream packages are:
 

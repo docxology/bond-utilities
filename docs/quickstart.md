@@ -51,8 +51,24 @@ uv run python scripts/z_generate_manuscript_variables.py
 ## Try the library
 
 ```python
-from bond_utilities import caesar_encrypt, caesar_break, nato_codename, MissionSchedule
-print(caesar_encrypt("Q-BRANCH", 3))
-print(caesar_break(caesar_encrypt("THEQUICKBROWNFOX", 7)))   # (7, 'THEQUICKBROWNFOX')
+from bond_utilities import caesar_encrypt, caesar_break, nato_codename
+
+print(caesar_encrypt("Q-BRANCH", 3))                          # 'T-EUDQFK'
+
+# caesar_break scores all 26 shifts by chi-squared fit against English letter
+# frequencies, so it needs a letter-rich sample. A 35-letter pangram is enough:
+print(caesar_break(caesar_encrypt("THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG", 7)))
+# (7, 'THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG')
+
+# A 16-letter sample is not enough — the statistic prefers a different shift,
+# and the function returns that wrong answer rather than signalling low
+# confidence. This is measured behaviour, not a hypothetical:
+print(caesar_break(caesar_encrypt("THEQUICKBROWNFOX", 7)))
+# (23, 'DROAESMULBYGXPYH')
+
 print(nato_codename("QB7"))                                   # 'QUEBEC-BRAVO-7'
 ```
+
+Every output quoted above is asserted against the live functions in
+`tests/test_documented_examples.py`, which also checks that this file still
+contains the exact strings — so a doc example cannot drift from the code.

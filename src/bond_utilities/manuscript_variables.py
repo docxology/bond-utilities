@@ -97,6 +97,11 @@ def generate_variables(
     overlap_start, overlap_end = parse_schedule(overlap_cfg)
     overlap_hours = windows_overlap(start, end, overlap_start, overlap_end).total_seconds() / 3600
     scheme_sample = codenames_by_scheme(num_codenames, seed=seed, scheme="alliterative")
+    # Alliterative capacity, computed from the bundled word lists rather than
+    # quoted: the scheme can only emit pairs whose adjective and noun share an
+    # initial, and it seeds each index independently, so samples may repeat.
+    shared_initials = {adj[0] for adj in ADJECTIVES} & {noun[0] for noun in NOUNS}
+    alliterative_pairs = {(adj, noun) for adj in ADJECTIVES for noun in NOUNS if adj[0] == noun[0]}
     stamp = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
 
     testing = loaded.get("testing")
@@ -116,6 +121,9 @@ def generate_variables(
         "RESULT_OVERLAP_HOURS": f"{overlap_hours:.1f}",
         "RESULT_CODENAME_SAMPLE": ", ".join(sample),
         "RESULT_SCHEME_SAMPLE": ", ".join(scheme_sample),
+        "RESULT_SCHEME_DISTINCT": str(len(set(scheme_sample))),
+        "ALLITERATIVE_INITIALS": str(len(shared_initials)),
+        "ALLITERATIVE_CAPACITY": str(len(alliterative_pairs)),
         "CIPHER_COUNT": str(len(CIPHER_NAMES)),
         "CIPHER_NAMES_CSV": ", ".join(CIPHER_NAMES),
         "CODENAME_SCHEMES": ", ".join(CODENAME_SCHEMES),

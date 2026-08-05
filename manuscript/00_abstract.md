@@ -19,8 +19,16 @@ overlap, merge, and duration models, and persisted mission records carry a
 reproducible input hash, the schema version, and the producing seed, so any
 outcome can be re-derived from its stored inputs.
 
-Every token in this manuscript is computed from `manuscript/config.yaml` via
-`src/bond_utilities/manuscript_variables.py` — never hand-authored. The test
-suite enforces that discipline directly: a cross-reference test fails on any
-prose token the generator does not produce, and a numeral guard fails on any
-hand-authored number in the quantitative sections.
+Every quantity this manuscript claims about the package — counts, capacities,
+window durations, sample outputs, and gate thresholds — arrives as a
+generated token computed from `manuscript/config.yaml` and the live registries by
+`src/bond_utilities/manuscript_variables.py`. Three tests enforce that: a
+cross-reference test fails on any prose token the generator does not produce; a
+bare-numeral guard fails on any hand-authored number in the abstract,
+introduction, results, conclusion, and reproducibility sections; and a
+hand-copied-metric guard fails when any section anywhere in the manuscript
+writes a generated value as a literal instead of its token. The exception is
+stated rather than hidden: the methodology and scope sections write the
+constants that *define* an algorithm — the modular base, the digraph square
+size, the reference index-of-coincidence values — as literals, because those
+are definitions of the mathematics, not measurements of this package.

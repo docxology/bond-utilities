@@ -76,6 +76,9 @@ class TestGenerateVariables:
             "RESULT_OVERLAP_HOURS",
             "RESULT_CODENAME_SAMPLE",
             "RESULT_SCHEME_SAMPLE",
+            "RESULT_SCHEME_DISTINCT",
+            "ALLITERATIVE_INITIALS",
+            "ALLITERATIVE_CAPACITY",
             "CIPHER_COUNT",
             "CIPHER_NAMES_CSV",
             "CODENAME_SCHEMES",
@@ -112,6 +115,11 @@ class TestGenerateVariables:
         assert v["SEEDED_HELPERS_CSV"].startswith("seeded_bytes, seeded_int")
         assert v["WORDLIST_SIZE"] == "12 x 12"
         assert v["WORDLIST_CAPACITY"] == "144"
+        # Alliterative capacity is computed from the word lists, not quoted.
+        assert v["ALLITERATIVE_INITIALS"] == "5"
+        assert v["ALLITERATIVE_CAPACITY"] == "9"
+        # The configured sample repeats: fewer distinct names than slots.
+        assert int(v["RESULT_SCHEME_DISTINCT"]) < int(v["CONFIG_NUM_CODENAMES"])
         assert v["GENERATION_TIMESTAMP"] == "2026-08-04T12:00:00+00:00"
         assert v["CONFIG_SCHEDULE_START"] == "2026-08-04T00:00:00+00:00"
         assert v["CONFIG_SCHEDULE_END"] == "2026-08-10T00:00:00+00:00"
@@ -215,7 +223,8 @@ class TestManuscriptCrossReference:
 
 #: Standard/algorithm identifiers that contain digits but are names, not metrics.
 #: Deliberately short and explicit — anything not on this list must be a token.
-NON_METRIC_IDENTIFIERS = ("SHA-256", "ISO-8601", "ISO 8601", "UTF-8", "A-Z")
+#: "Layer 0" is the suite's name for this package's position, not a count.
+NON_METRIC_IDENTIFIERS = ("SHA-256", "ISO-8601", "ISO 8601", "UTF-8", "A-Z", "Layer 0")
 
 
 def _strip_non_prose(markdown: str) -> str:
@@ -238,13 +247,61 @@ def _strip_non_prose(markdown: str) -> str:
     return text
 
 
-#: Sections that make quantitative claims; every number in them must be a token.
+#: Sections that make quantitative claims about the package; every number in
+#: them must arrive as a token.
+#:
+#: ``02_methodology.md`` and ``07_scope_and_related_work.md`` are deliberately
+#: outside this set: they write the constants that *define* the algorithms
+#: (modular base, digraph square size, reference IC values) as literals, which
+#: are mathematics rather than measurements of this package. They are not
+#: unguarded — :class:`TestGeneratedMetricsAreNotHandCopied` covers every
+#: section, including those two, against hand-copied generated values.
 QUANTITATIVE_SECTIONS = (
     "00_abstract.md",
+    "01_introduction.md",
     "03_results.md",
     "04_conclusion.md",
     "06_reproducibility.md",
 )
+
+#: Sections excluded from the bare-numeral guard, and therefore the ones the
+#: manuscript's honesty statement names explicitly as carrying literals.
+DEFINITIONAL_SECTIONS = ("02_methodology.md", "07_scope_and_related_work.md")
+
+#: Tokens whose value is a package metric that must never be pasted into prose.
+#: Excludes free-text tokens (names, CSVs, timestamps) and values so short they
+#: collide with ordinary prose digits.
+METRIC_TOKENS = (
+    "CIPHER_COUNT",
+    "CODENAME_SCHEME_COUNT",
+    "CRYPTANALYSIS_HELPERS",
+    "SEEDED_HELPER_COUNT",
+    "ALLITERATIVE_CAPACITY",
+    "ALLITERATIVE_INITIALS",
+    "WORDLIST_CAPACITY",
+    "RESULT_WINDOW_HOURS",
+    "RESULT_OVERLAP_HOURS",
+    "COVERAGE_GATE_PERCENT",
+    "CONFIG_DEFAULT_SEED",
+    "CONFIG_NUM_CODENAMES",
+)
+
+
+#: The bibliography is the one section excluded from the metric scan: its
+#: volume, issue, page and year numbers are citation data, and some of them
+#: (e.g. journal volume 8) collide with package metrics. The exclusion is
+#: pinned by a test so it cannot silently grow.
+METRIC_SCAN_EXCLUSIONS = ("99_references.md",)
+
+
+def _manuscript_sections() -> list[Path]:
+    """Every numbered manuscript prose section, in order."""
+    return sorted((PROJECT_ROOT / "manuscript").glob("[0-9]*.md"))
+
+
+def _metric_scanned_sections() -> list[Path]:
+    """Sections whose numbers are claims about the package, not citations."""
+    return [section for section in _manuscript_sections() if section.name not in METRIC_SCAN_EXCLUSIONS]
 
 
 class TestNoHandAuthoredNumbers:
@@ -279,6 +336,53 @@ class TestNoHandAuthoredNumbers:
                 if re.search(r"\d", line):
                     offenders.append(f"{name}:{line_number}: {line.strip()}")
         assert not offenders, "hand-authored numbers in quantitative prose:\n" + "\n".join(offenders)
+
+
+class TestGeneratedMetricsAreNotHandCopied:
+    """No section may paste a generated metric value instead of its token.
+
+    The bare-numeral guard above covers only the quantitative sections. This
+    guard covers *every* numbered section, including the two that legitimately
+    carry algorithm constants, and it is value-driven: it asks the generator
+    what each metric currently is and then fails if that literal appears as a
+    standalone number in prose. That is the exact drift the introduction
+    suffered when it hard-coded the cipher and scheme counts.
+    """
+
+    def _prose(self, section: Path) -> str:
+        return _strip_non_prose(section.read_text(encoding="utf-8"))
+
+    def test_metric_tokens_all_exist(self) -> None:
+        """Guard against the guard going vacuous through a renamed token."""
+        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        missing = set(METRIC_TOKENS) - set(variables)
+        assert not missing, f"METRIC_TOKENS names tokens the generator no longer produces: {missing}"
+        assert METRIC_TOKENS, "no metrics to check — the guard would be vacuous"
+
+    def test_sections_scanned_is_non_empty_and_covers_both_groups(self) -> None:
+        scanned = {section.name for section in _metric_scanned_sections()}
+        assert scanned, "no sections scanned — the guard would be vacuous"
+        assert set(QUANTITATIVE_SECTIONS) <= scanned
+        assert set(DEFINITIONAL_SECTIONS) <= scanned
+
+    def test_only_the_bibliography_is_excluded(self) -> None:
+        """Pin the exclusion so it cannot quietly absorb a drifting section."""
+        all_names = {section.name for section in _manuscript_sections()}
+        scanned = {section.name for section in _metric_scanned_sections()}
+        assert all_names - scanned == {"99_references.md"}
+
+    def test_no_section_hand_copies_a_generated_metric(self) -> None:
+        import re
+
+        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        offenders: list[str] = []
+        for section in _metric_scanned_sections():
+            prose = self._prose(section)
+            for token in METRIC_TOKENS:
+                value = variables[token]
+                if re.search(rf"(?<![\w.]){re.escape(value)}(?![\w.])", prose):
+                    offenders.append(f"{section.name}: literal {value!r} instead of {{{{{token}}}}}")
+        assert not offenders, "hand-copied generated metrics:\n" + "\n".join(offenders)
 
 
 class TestGateNumbersAgreeWithEnforcement:
@@ -322,3 +426,52 @@ class TestVersionConsistency:
         assert bond_utilities.__version__ == declared.group(1)
         assert config_version == declared.group(1)
         assert variables["PACKAGE_VERSION"] == declared.group(1)
+
+
+#: Ledger claim ids whose numeric value must equal a live generated token.
+#: The ledger is a static evidence file; without this binding its rows are
+#: assertions nobody re-checks.
+LEDGER_CLAIM_TOKENS = {
+    "cipher-count": "CIPHER_COUNT",
+    "cryptanalysis-helpers": "CRYPTANALYSIS_HELPERS",
+    "codename-schemes": "CODENAME_SCHEME_COUNT",
+    "wordlist-size": "WORDLIST_CAPACITY",
+    "schedule-window-hours": "RESULT_WINDOW_HOURS",
+    "overlap-window-hours": "RESULT_OVERLAP_HOURS",
+    "default-seed": "CONFIG_DEFAULT_SEED",
+    "alliterative-initials": "ALLITERATIVE_INITIALS",
+    "alliterative-capacity": "ALLITERATIVE_CAPACITY",
+    "seeded-helper-count": "SEEDED_HELPER_COUNT",
+}
+
+
+class TestClaimLedgerMatchesTheCode:
+    """`data/claim_ledger.yaml` is evidence, so it must be re-derivable.
+
+    Every numeric row that restates a generated metric is compared against the
+    live token map. A registry change that leaves the ledger behind fails here
+    instead of quietly shipping a stale evidence file.
+    """
+
+    def _ledger(self) -> dict[str, dict]:
+        import yaml
+
+        raw = yaml.safe_load((PROJECT_ROOT / "data" / "claim_ledger.yaml").read_text(encoding="utf-8"))
+        return {row["claim_id"]: row for row in raw["claims"]}
+
+    def test_every_mapped_claim_exists(self) -> None:
+        ledger = self._ledger()
+        assert ledger, "claim ledger is empty — the check below would be vacuous"
+        missing = set(LEDGER_CLAIM_TOKENS) - set(ledger)
+        assert not missing, f"mapped claim ids absent from the ledger: {sorted(missing)}"
+
+    def test_numeric_claims_equal_the_generated_tokens(self) -> None:
+        ledger = self._ledger()
+        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        mismatches: list[str] = []
+        for claim_id, token in LEDGER_CLAIM_TOKENS.items():
+            recorded = str(ledger[claim_id]["value"])
+            live = variables[token]
+            if recorded != live:
+                mismatches.append(f"{claim_id}: ledger {recorded!r} != generated {live!r} ({token})")
+        assert not mismatches, "stale claim ledger rows:\n" + "\n".join(mismatches)

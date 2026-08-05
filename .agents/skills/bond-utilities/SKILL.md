@@ -22,7 +22,7 @@ package.
 
 ```bash
 # From the package root
-uv run pytest tests/ --cov=src --cov-fail-under=90   # ≥90% line+branch on src/ (currently 100%)
+uv run pytest tests/ --cov=src --cov-fail-under=90   # enforced floor = pyproject fail_under
 uv run ruff check src/ scripts/
 uv run ruff format --check src/ scripts/
 uv run mypy src/ scripts/
@@ -44,6 +44,10 @@ uv run python scripts/z_generate_manuscript_variables.py
   `{{TOKEN}}` comes from `manuscript/config.yaml` via
   `src/bond_utilities/manuscript_variables.py`.
 - **Local only.** This tree has no remote; never push.
+- **No measured numbers in docs.** Never paste a coverage percentage or test
+  count into this file, the README, or AGENTS.md — run the command and read the
+  real number. Only the *enforced* floor (`pyproject.toml` `fail_under`) is
+  quotable, and the manuscript quotes it through a generated token.
 
 ## Cross-references
 

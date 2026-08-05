@@ -80,14 +80,119 @@ class TestRegistry:
             "playfair",
             "columnar",
         )
-        assert len(CIPHER_NAMES) == 9
 
     def test_descriptions_and_helpers(self) -> None:
         assert set(CIPHER_DESCRIPTIONS) == set(CIPHER_NAMES)
-        assert len(CRYPTANALYSIS_HELPERS) == 8
         assert "caesar_break" in CRYPTANALYSIS_HELPERS
         assert abs(sum(ENGLISH_FREQUENCIES.values()) - 1.0) < 1e-3
         assert set(ENGLISH_FREQUENCIES) == {chr(code) for code in range(ord("a"), ord("z") + 1)}
+
+
+#: Round-trip exercisers keyed by registered cipher name. The keys are compared
+#: against ``CIPHER_NAMES`` below, so a cipher cannot enter the registry without
+#: a real round-trip here, and cannot be removed from the registry while one
+#: remains.
+_ROUND_TRIPS: dict[str, object] = {
+    "caesar": lambda: caesar_decrypt(caesar_encrypt("ATTACK AT DAWN", 5), 5) == "ATTACK AT DAWN",
+    "vigenere": lambda: vigenere_decrypt(vigenere_encrypt("ATTACK AT DAWN", "LEMON"), "LEMON") == "ATTACK AT DAWN",
+    "one_time_pad": lambda: one_time_pad(one_time_pad(b"secret", b"\x11" * 6), b"\x11" * 6) == b"secret",
+    "xor": lambda: xor_bytes(xor_bytes(b"payload", b"\x01\x02"), b"\x01\x02") == b"payload",
+    "atbash": lambda: atbash(atbash("HELLO")) == "HELLO",
+    "beaufort": lambda: beaufort_decrypt(beaufort_encrypt("MISSION", "KEY"), "KEY") == "MISSION",
+    "rail_fence": lambda: rail_fence_decrypt(rail_fence_encrypt("QBRANCH", 3), 3) == "QBRANCH",
+    "playfair": lambda: playfair_decrypt(playfair_encrypt("HIDETHEGOLD", "LEMON"), "LEMON").startswith("HID"),
+    "columnar": lambda: columnar_decrypt(columnar_encrypt("QBRANCH", "21"), "21") == "QBRANCH",
+}
+
+#: Public functions of ``ciphers`` that are neither a cipher entrypoint nor a
+#: cryptanalysis helper. Together with the two registries this is an exhaustive
+#: partition of the module's public function surface — see
+#: :class:`TestRegistryBinding`.
+_KEY_AND_CODENAME_UTILITIES = frozenset(
+    {"generate_otp_key", "obfuscate_codename", "restore_codename", "codename_token"}
+)
+
+
+def _entrypoint_candidates(name: str) -> set[str]:
+    """Names a registered cipher ``name`` may be implemented under."""
+    return {name, f"{name}_encrypt", f"{name}_decrypt", f"{name}_bytes"}
+
+
+class TestRegistryBinding:
+    """`CIPHER_NAMES` / `CRYPTANALYSIS_HELPERS` bound to the module, not to copies.
+
+    The literal tuple assertion above pins the *order* the manuscript CSV token
+    renders. These tests pin the *content* against what the module actually
+    defines and what the suite actually exercises, in both directions.
+    """
+
+    def test_every_registered_cipher_has_a_real_entrypoint(self) -> None:
+        import bond_utilities.ciphers as module
+
+        for name in CIPHER_NAMES:
+            resolved = [
+                candidate
+                for candidate in _entrypoint_candidates(name)
+                if callable(getattr(module, candidate, None)) and candidate in module.__all__
+            ]
+            assert resolved, f"CIPHER_NAMES entry {name!r} resolves to no exported callable"
+
+    def test_every_registered_cipher_has_a_verified_round_trip(self) -> None:
+        assert set(_ROUND_TRIPS) == set(CIPHER_NAMES)
+        for name, check in _ROUND_TRIPS.items():
+            assert check(), f"round trip failed for registered cipher {name!r}"  # type: ignore[operator]
+
+    def test_every_encrypt_function_is_registered(self) -> None:
+        """Reverse direction: a new ``*_encrypt`` must join `CIPHER_NAMES`."""
+        import inspect
+
+        import bond_utilities.ciphers as module
+
+        discovered = {
+            name[: -len("_encrypt")]
+            for name, obj in vars(module).items()
+            if name.endswith("_encrypt")
+            and inspect.isfunction(obj)
+            and getattr(obj, "__module__", "") == module.__name__
+        }
+        unregistered = discovered - set(CIPHER_NAMES)
+        assert not unregistered, f"cipher entrypoints missing from CIPHER_NAMES: {sorted(unregistered)}"
+
+    def test_every_registered_helper_is_a_real_exported_function(self) -> None:
+        import inspect
+
+        import bond_utilities.ciphers as module
+
+        for name in CRYPTANALYSIS_HELPERS:
+            attribute = getattr(module, name, None)
+            assert inspect.isfunction(attribute), f"CRYPTANALYSIS_HELPERS names a non-function: {name}"
+            assert name in module.__all__, f"CRYPTANALYSIS_HELPERS names an unexported helper: {name}"
+
+    def test_public_function_surface_is_exhaustively_partitioned(self) -> None:
+        """Reverse direction for both registries.
+
+        Every public function of the module belongs to exactly one of: a
+        registered cipher entrypoint, `CRYPTANALYSIS_HELPERS`, or the small
+        explicit key/codename utility set. Adding a public function without
+        classifying it fails here, so neither registry can silently fall behind
+        the code the manuscript counts.
+        """
+        import inspect
+
+        import bond_utilities.ciphers as module
+
+        cipher_entrypoints = {candidate for name in CIPHER_NAMES for candidate in _entrypoint_candidates(name)}
+        classified = cipher_entrypoints | set(CRYPTANALYSIS_HELPERS) | _KEY_AND_CODENAME_UTILITIES
+        public_functions = {
+            name
+            for name in module.__all__
+            if inspect.isfunction(getattr(module, name, None))
+            and getattr(getattr(module, name), "__module__", "") == module.__name__
+        }
+        unclassified = public_functions - classified
+        assert not unclassified, f"public ciphers functions in no registry and no utility set: {sorted(unclassified)}"
+        stale = _KEY_AND_CODENAME_UTILITIES - public_functions
+        assert not stale, f"utility set names functions that no longer exist: {sorted(stale)}"
 
 
 class TestCaesar:

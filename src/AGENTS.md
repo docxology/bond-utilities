@@ -15,7 +15,7 @@ suite. Every other bond package imports from it.
 | `randomness.py` | `derive_seed`, `make_rng`, `seeded()`, seeded scalar/sequence draws | pure (restores global state) |
 | `mission_io.py` | JSON/YAML persistence, schema, provenance verify/append/summary | file I/O |
 | `reporting.py` | Table/KV/banner/schedule-table output | writes to an explicit stream |
-| `testing.py` | Shared pytest fixtures/helpers | import-light, no mocks |
+| `testing.py` | Two pytest fixtures (`seeded_rng`, `mission_record`) + two plain helpers (`temp_dir`, `seeded_codenames`) | import-light, no mocks |
 | `manuscript_variables.py` | `{{TOKEN}}` map from `manuscript/config.yaml` | reads config |
 | `figures/plots.py` | Schedule + letter-frequency figures | writes PNG |
 

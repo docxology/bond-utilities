@@ -2,7 +2,7 @@
 
 ## Ciphers (`src/bond_utilities/ciphers.py`)
 
-The cipher suite falls into three families. **Monoalphabetic:** Caesar
+The cipher suite falls into four families. **Monoalphabetic:** Caesar
 (`c = (p + shift) mod 26`), Atbash (reverse alphabet, self-inverse), and
 Beaufort (`c = (k - p) mod 26`, self-inverse). **Polyalphabetic/keyed:**
 Vigenère (keyword advances over letters only), Playfair (digraph
@@ -23,7 +23,11 @@ the digraph cipher round-trips against its prepared (X-split, padded) form.
 - `english_chi_squared` — chi-squared fit of letter frequencies against
   standard English.
 - `caesar_shift_scores` / `caesar_break` — score all 26 shifts by chi-squared
-  and return the best `(shift, plaintext)`.
+  and return the best `(shift, plaintext)`. The score is a statistic over the
+  input's letter counts, so the returned shift is the best-fitting one, not a
+  certified one: on short samples the best fit is often the wrong shift, and
+  the function returns it with no confidence signal (see Limitations in
+  `07_scope_and_related_work.md`).
 - `kasiski_key_lengths` — locate repeated n-grams, factor their distances,
   and vote on candidate Vigenère key lengths.
 - `vigenere_break` — break each key column independently and re-interleave.
@@ -43,7 +47,13 @@ registry that the manuscript reads.
 
 - `adjective_noun` (default) — unique pairs sampled without replacement from
   a {{WORDLIST_SIZE}} grid.
-- `alliterative` — ADJ-NOUN pairs sharing a starting letter.
+- `alliterative` — ADJ-NOUN pairs sharing a starting letter. Unlike
+  `adjective_noun`, this scheme seeds each index independently instead of
+  sampling without replacement, so a batch may repeat a name; and only
+  {{ALLITERATIVE_INITIALS}} initials are carried by both word lists, giving
+  {{ALLITERATIVE_CAPACITY}} distinct pairs in total. Repetition in a batch is
+  therefore expected, not a defect — `tests/test_codenames.py` asserts both the
+  capacity and the repetition.
 - `nato` — NATO phonetic spelling of a base codename (e.g. `{{NATO_EXAMPLE}}`).
 - `numeric` — `PREFIX-XXXXXXXX` hex codes derived from a mission id.
 - `token` — truncated SHA-256 hex tokens.
@@ -84,14 +94,20 @@ a mock framework.
 draws the window as a horizontal bar in unix-time coordinates with a dashed
 "now" marker; `plot_frequency_analysis` draws the A-Z counts returned by
 `ciphers.letter_frequency`. Both are deterministic under the Agg backend — the
-same inputs produce byte-identical PNGs, which is asserted directly in
-`tests/test_figures.py`.
+same inputs produce byte-identical PNGs, which `tests/test_figures.py` asserts
+for each figure by comparing two renders. For the schedule figure the input
+includes `now`: the marker moves with the wall clock when `now` is left to its
+default, so determinism is claimed and tested for a fixed `now`, and a negative
+control asserts that two different `now` values do produce different bytes.
 
 ## Shared fixtures (`testing.py`)
 
-`testing.py` carries the fixtures every bond package reuses through its own
-`conftest.py`: `seeded_rng` (a `random.Random` at the suite's default seed),
-`mission_record` (a schema-valid record), `temp_dir`, and `seeded_codenames`.
+`testing.py` carries the shared test surface every bond package reuses through
+its own `conftest.py`. Two of the four names are actual pytest fixtures —
+`seeded_rng` (a `random.Random` at the suite's default seed) and
+`mission_record` (a schema-valid record); the other two are plain callables
+imported directly, `temp_dir` (a context manager) and `seeded_codenames` (a
+function). A test asserts that split, so the distinction cannot be lost.
 It imports only `pytest`, the standard library, and this package's pure
 primitives, so importing it can never pull numpy, matplotlib, or — the point of
 the constraint — a mock framework into a consumer's test session.

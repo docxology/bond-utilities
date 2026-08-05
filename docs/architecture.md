@@ -104,6 +104,19 @@ force over all 26 shifts), `kasiski_key_lengths` (repeated-n-gram distance
 factoring and voting), and `vigenere_break` (per-column Caesar breaks
 re-interleaved into reading order).
 
+Both breakers are statistics, not oracles: `caesar_break` returns the
+best-fitting shift of all 26 and `vigenere_break` breaks each column the same
+way, so on short samples both return a wrong answer with no confidence signal.
+The measured failure cases are asserted in `tests/test_documented_examples.py`.
+
+`CIPHER_NAMES` and `CRYPTANALYSIS_HELPERS` are bound to the module by
+`tests/test_ciphers.py::TestRegistryBinding`: every registered cipher must
+resolve to an exported callable and pass a round trip, every `*_encrypt`
+function must be registered, and the module's whole public function surface must
+partition into the two registries plus a small explicit key/codename utility
+set. `CODENAME_SCHEMES` is bound the same way to the `codenames_by_scheme`
+dispatch branches.
+
 `generate_otp_key` delegates to `randomness.seeded_bytes` rather than owning
 its own byte source — one seed, one path, byte-identical results.
 `codename_token` derives a stable truncated SHA-256 token from a name and seed.
@@ -118,7 +131,12 @@ Curated 12x12 adjective/noun pools plus five schemes registered in
 from the full product, so capacity is bounded and exceeding it raises rather
 than repeating a name), `alliterative` (adjective and noun sharing an initial),
 `nato` (ICAO spelling via `NATO_ALPHABET`), `numeric` (`QB-XXXXXXXX` hex folds
-of a mission id), and `token` (truncated SHA-256). `generate_codenames`
+of a mission id), and `token` (truncated SHA-256). Only `adjective_noun`
+guarantees distinct names. `alliterative` seeds each index independently and the
+bundled lists share just five initials across nine distinct pairs, so a batch of
+that scheme can — and for the manuscript's own configured sample does — repeat a
+name; `tests/test_codenames.py::TestAlliterativeCapacity` asserts both the
+capacity and the repetition. `generate_codenames`
 dispatches on scheme while preserving its original adjective–noun default
 signature exactly — the film fleet calls it and must not break.
 `codename_for(name, seed)` folds a name into a derived seed for a stable
@@ -188,13 +206,21 @@ actually enforces. No manuscript number is authored by hand anywhere here.
 `plot_mission_schedule` draws the window as a horizontal bar in unix-time
 coordinates with a dashed "now" marker; `plot_frequency_analysis` draws the A-Z
 counts from `ciphers.letter_frequency`. Both are byte-deterministic under the
-Agg backend (pinned in `tests/conftest.py`), which the tests assert directly by
-comparing two renders of the same input.
+Agg backend (pinned in `tests/conftest.py`) for a fixed input, and
+`tests/test_figures.py` asserts that for *each* figure by comparing two renders.
+For `plot_mission_schedule` the input includes `now`: left at its default the
+marker tracks the wall clock, so the determinism claim is scoped to an explicit
+`now`, and a negative control asserts two different `now` values do change the
+bytes.
 
 ### `testing.py` — shared fixtures
 
-`seeded_rng`, `mission_record`, `temp_dir`, `seeded_codenames`, and
-`DEFAULT_TEST_SEED`. Import-light on purpose: only `pytest`, the standard
+Two pytest fixtures — `seeded_rng` and `mission_record` — plus two plain
+callables and a constant: `temp_dir` (a `@contextmanager`, used in a `with`
+block), `seeded_codenames` (an ordinary function), and `DEFAULT_TEST_SEED`.
+Only the first two can be requested by name in a test signature; the others are
+imported directly. `tests/test_testing.py::TestSharedSurfaceShape` asserts that
+split. Import-light on purpose: only `pytest`, the standard
 library, and this package's pure primitives, so a consumer's `conftest.py` can
 re-export these fixtures without dragging numpy, matplotlib, or a mock
 framework into its test session.
@@ -217,8 +243,16 @@ layout and type-checks the orchestrators too.
 - Importing `infrastructure.*` or any sibling bond package inside `src/`.
 - Implementing business logic inside `scripts/`.
 - Any mock framework in `tests/`.
-- Hardcoding a manuscript metric in prose instead of a `{{TOKEN}}` — the
-  numeral guard in `tests/test_manuscript_variables.py` fails the build.
+- Hardcoding a manuscript metric in prose instead of a `{{TOKEN}}` — two guards
+  in `tests/test_manuscript_variables.py` fail the build: the numeral guard over
+  the quantitative sections, and the hand-copied-metric guard over every
+  section, which is what the introduction's hardcoded `9 ciphers / 8 helpers /
+  5 schemes` slipped past before.
+- Quoting a measured coverage percentage or test count in any document. Only
+  the enforced `fail_under` floor is quotable.
+- Documenting a worked example whose output the code does not produce —
+  `tests/test_documented_examples.py` executes each one and requires the quoted
+  text to match.
 - Adding a `MissionProvider` implementation here (see the first section).
 
 ## Adding a primitive

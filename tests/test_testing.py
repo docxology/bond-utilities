@@ -42,3 +42,60 @@ class TestFixtures:
         assert set(["mission_id", "codename", "seed", "version", "started_at", "parameters"]) <= set(
             mission_record.keys()
         )
+
+
+class TestSharedSurfaceShape:
+    """What `testing.py` actually exports: two fixtures and two plain helpers.
+
+    The docs used to call all four "shared pytest fixtures". Only `seeded_rng`
+    and `mission_record` carry ``@pytest.fixture``; `temp_dir` is a context
+    manager and `seeded_codenames` is an ordinary function, both imported
+    directly rather than requested by name in a test signature. This test pins
+    that distinction so the docs cannot drift back.
+    """
+
+    @staticmethod
+    def _is_fixture(obj: object) -> bool:
+        """True when ``obj`` was produced by ``@pytest.fixture``.
+
+        pytest 9 returns a ``FixtureFunctionDefinition``; older versions tag
+        the plain function. Both markers are accepted.
+        """
+        return hasattr(obj, "_fixture_function_marker") or hasattr(obj, "_pytestfixturefunction")
+
+    def test_exactly_two_names_are_pytest_fixtures(self) -> None:
+        import bond_utilities.testing as module
+
+        fixtures = {name for name in module.__all__ if self._is_fixture(getattr(module, name))}
+        assert fixtures == {"seeded_rng", "mission_record"}
+
+    def test_helpers_are_not_fixtures(self) -> None:
+        import bond_utilities.testing as module
+
+        for name in ("temp_dir", "seeded_codenames"):
+            assert not self._is_fixture(getattr(module, name)), (
+                f"{name} became a pytest fixture — update README/architecture/testing_philosophy"
+            )
+
+    def test_helpers_are_callable_without_a_fixture_request(self) -> None:
+        with temp_dir() as directory:
+            assert directory.is_dir()
+        assert seeded_codenames(2) == seeded_codenames(2)
+
+    def test_module_imports_no_mock_framework_and_no_heavy_deps(self) -> None:
+        """Scan the import statements themselves, not the prose docstring."""
+        import ast
+        import inspect
+
+        import bond_utilities.testing as module
+
+        tree = ast.parse(inspect.getsource(module))
+        imported: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.add(node.module)
+        roots = {name.split(".")[0] for name in imported}
+        for banned in ("unittest", "mock", "numpy", "matplotlib"):
+            assert banned not in roots, f"testing.py must not import {banned} (found {sorted(imported)})"

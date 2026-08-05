@@ -57,3 +57,37 @@ claims:
     source: src/bond_utilities/ciphers.py one_time_pad guard
     source_tier: project_source
     freshness: active
+  - claim_id: alliterative-initials
+    kind: number
+    value: 5
+    source: src/bond_utilities/codenames.py shared initials of ADJECTIVES and NOUNS
+    source_tier: generated_metric
+    freshness: active
+    artifact_path: manuscript/03_results.md
+  - claim_id: alliterative-capacity
+    kind: number
+    value: 9
+    source: src/bond_utilities/codenames.py distinct shared-initial ADJ/NOUN pairs
+    source_tier: generated_metric
+    freshness: active
+    artifact_path: manuscript/03_results.md
+  - claim_id: seeded-helper-count
+    kind: number
+    value: 7
+    source: src/bond_utilities/randomness.py SEEDED_HELPERS length
+    source_tier: project_source
+    freshness: active
+  - claim_id: caesar-break-short-text-limitation
+    kind: string
+    value: "caesar_break returns the wrong shift on short English text (16 and 21 letters, measured)"
+    source: tests/test_documented_examples.py TestRecoveryIsLengthDependent
+    source_tier: project_source
+    freshness: active
+    artifact_path: manuscript/07_scope_and_related_work.md
+  - claim_id: alliterative-scheme-repeats
+    kind: string
+    value: "codenames_by_scheme(..., scheme='alliterative') may repeat a name within one batch"
+    source: tests/test_codenames.py TestAlliterativeCapacity
+    source_tier: project_source
+    freshness: active
+    artifact_path: manuscript/07_scope_and_related_work.md

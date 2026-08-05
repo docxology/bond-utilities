@@ -18,12 +18,14 @@ percentage or test count; those come from the run, not from a document.
 
 ### Library gaps
 
-- [ ] **Document (or measure) the `vigenere_break` sample floor.** Recovery is
-      reliable on letter-rich ciphertext, but per-column chi-squared needs
-      enough samples per column, and short texts can mis-estimate a shift. The
-      limitation is stated in `manuscript/07_scope_and_related_work.md`; what is
-      missing is an actual measured minimum-column-length curve to cite, which
-      would need a new experiment and its own token.
+- [ ] **Measure the sample floor for `caesar_break` and `vigenere_break`.**
+      Both are chi-squared fits and both fail on short text — a 16- and a
+      21-letter English sample recover the wrong Caesar shift, and the 21-letter
+      Vigenère case recovers the wrong key. Those specific failures are now
+      asserted in `tests/test_documented_examples.py` and stated in
+      `manuscript/07_scope_and_related_work.md`, so nothing overclaims. What is
+      still missing is a measured minimum-length curve to cite, which would need
+      a new experiment and its own token.
 - [ ] **Decide on `generate_codenames(..., allow_repeats=True)`.** The default
       `adjective_noun` scheme samples without replacement and therefore raises
       above the word-list capacity. That is the correct default; a documented

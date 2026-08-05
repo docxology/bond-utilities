@@ -1,8 +1,8 @@
 """Pytest configuration for bond-utilities tests.
 
 Pins the matplotlib Agg backend (headless), ensures ``src/`` is importable,
-and re-exports the shared fixtures from ``bond_utilities.testing`` so every
-bond package can reuse them.
+and re-exports the shared test surface from ``bond_utilities.testing`` so every
+bond package can reuse it.
 """
 
 from __future__ import annotations
@@ -19,8 +19,11 @@ for _path in (SRC, ROOT):
     if _path not in sys.path:
         sys.path.insert(0, _path)
 
-# Re-export shared fixtures so `seeded_rng` / `mission_record` / `temp_dir`
-# are available to every test module without a mock framework.
+# Re-export the shared test surface. Only `seeded_rng` and `mission_record` are
+# pytest fixtures — re-exporting them here makes them requestable by name in any
+# test signature. `temp_dir` (a context manager) and `seeded_codenames` (a plain
+# function) are re-exported for convenience only; test modules import them
+# directly. No mock framework is involved in any of it.
 from bond_utilities.testing import (  # noqa: E402
     DEFAULT_TEST_SEED,
     mission_record,

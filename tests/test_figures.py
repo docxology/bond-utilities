@@ -45,6 +45,27 @@ class TestPlotMissionSchedule:
         with pytest.raises(ValueError, match="must not precede"):
             plot_mission_schedule(_dt(6), _dt(0), now=_dt(3), path=tmp_path / "x.png")
 
+    def test_deterministic_bytes(self, tmp_path: Path) -> None:
+        """Two renders of the same window must be byte-identical.
+
+        ``now`` is passed explicitly: the wall-clock default makes the marker
+        position time-dependent, so determinism holds for a fixed ``now``, not
+        for the default. That is the property the docs are allowed to claim.
+        """
+        a = tmp_path / "a.png"
+        b = tmp_path / "b.png"
+        plot_mission_schedule(_dt(0), _dt(6), now=_dt(3), path=a)
+        plot_mission_schedule(_dt(0), _dt(6), now=_dt(3), path=b)
+        assert a.read_bytes() == b.read_bytes()
+
+    def test_different_now_changes_bytes(self, tmp_path: Path) -> None:
+        """Negative control: the determinism test above is not trivially true."""
+        a = tmp_path / "a.png"
+        b = tmp_path / "b.png"
+        plot_mission_schedule(_dt(0), _dt(6), now=_dt(1), path=a)
+        plot_mission_schedule(_dt(0), _dt(6), now=_dt(5), path=b)
+        assert a.read_bytes() != b.read_bytes()
+
 
 class TestPlotFrequencyAnalysis:
     def test_writes_png_to_explicit_path(self, tmp_path: Path) -> None:

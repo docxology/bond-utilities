@@ -15,8 +15,12 @@ none of them.
 - **Round-trip verified** — every cipher passes `decrypt(encrypt(x)) == x` with real data.
 - **Provenance-first** — mission records carry an input hash, schema version, and seed.
 - **Zero mocks** — tests use real data and real computation only.
-- **Generated numbers** — every metric in the manuscript is a computed token, and
-  a guard test fails the build on a hand-authored one.
+- **Generated numbers** — every quantity the manuscript claims about this
+  package is a computed token. Two guards enforce it: a bare-numeral guard over
+  the quantitative sections, and a hand-copied-metric guard over every section.
+  Constants that define an algorithm (modular base, digraph square size,
+  reference IC values) are written literally in the methodology and scope
+  sections and are named as the exception rather than hidden.
 
 ## Where this sits in the fleet
 
@@ -64,7 +68,7 @@ uv run pytest tests/ --cov=src --cov-fail-under=90
 | `reporting` | `format_table`, `format_kv`, `banner`, `schedule_table`, and stream print helpers whose stdout default resolves at call time |
 | `manuscript_variables` | Computes the whole `{{TOKEN}}` map for the manuscript from `manuscript/config.yaml` |
 | `figures/plots` | Deterministic `plot_mission_schedule` and `plot_frequency_analysis` PNGs |
-| `testing` | Shared pytest fixtures (`seeded_rng`, `mission_record`, `temp_dir`, `seeded_codenames`) — import-light so consumers never pull numpy, matplotlib, or a mock framework |
+| `testing` | Two shared pytest fixtures (`seeded_rng`, `mission_record`) plus two plain helpers imported directly (`temp_dir`, a context manager; `seeded_codenames`, a function) — import-light so consumers never pull numpy, matplotlib, or a mock framework |
 
 ## Usage
 
@@ -78,10 +82,23 @@ from bond_utilities import (
 )
 
 ciphertext = caesar_encrypt("ATTACK AT DAWN", 5)
-shift, plaintext = caesar_break(ciphertext)     # (5, "ATTACK AT DAWN")
+shift, plaintext = caesar_break(ciphertext)     # (5, 'ATTACK AT DAWN')
 
-cipher = vigenere_encrypt("THEQUICKBROWNFOXJUMPS", "LEMON")
-key, decoded = vigenere_break(cipher, 5)        # recover the keyword
+# Both breakers are statistical (chi-squared against English letter
+# frequencies), so both need a letter-rich sample — this one is 202 letters.
+sample = (
+    "THEQUICKBROWNFOXJUMPSOVERTHELAZYDOGANDTHENGATHERSGRACEFULACORNS"
+    "FROMEVERYMAPLETREEBYTHERIVERBANKWHILETHEHUNTERSLEEPSSILENTLYIN"
+    "THESHADOWOFTHECASTLECLOCKTOWERCOUNTINGTHEMINUTESUNTILTHEDAWN"
+    "BREAKSOVERHORIZON"
+)
+cipher = vigenere_encrypt(sample, "LEMON")
+key, decoded = vigenere_break(cipher, 5)        # key == 'LEMON', decoded == sample
+
+# On short text they return a wrong answer with no confidence signal: for the
+# 21-letter "THEQUICKBROWNFOXJUMPS", vigenere_break(..., 5) yields 'MTSMQ', and
+# caesar_break of its shift-7 ciphertext yields shift 8. Measured, not
+# hypothetical — asserted in tests/test_documented_examples.py.
 
 assert atbash(atbash("HELLO")) == "HELLO"
 assert rail_fence_decrypt(rail_fence_encrypt("QBRANCH", 3), 3) == "QBRANCH"
@@ -96,7 +113,7 @@ from bond_utilities import generate_codenames, nato_codename, numeric_codename
 adj_noun = generate_codenames(6, seed=20260804)
 allo = generate_codenames(6, seed=20260804, scheme="alliterative")
 print(nato_codename("QB7"))                 # 'QUEBEC-BRAVO-7'
-print(numeric_codename("M-001", seed=7))    # 'QB-XXXXXXXX'
+print(numeric_codename("M-001", seed=7))    # 'QB-B6050C24' (format: QB-<8 hex digits>)
 ```
 
 ### Clock / schedule models
@@ -167,9 +184,15 @@ measured percentage or test count is pasted into this README — run the command
 above and read the real number, which is the only one that is ever current.
 
 Beyond line coverage, the suite carries guards designed to fail: a manuscript
-token cross-reference, a bare-numeral guard (with a positive control), `__all__`
-completeness checks, a `SEEDED_HELPERS` registry-drift check, and provenance
-mutation tests. See [`docs/testing_philosophy.md`](docs/testing_philosophy.md).
+token cross-reference, a bare-numeral guard (with a positive control), a
+hand-copied-metric guard across every manuscript section, `__all__` completeness
+checks, registry-drift binding for `SEEDED_HELPERS`, `CIPHER_NAMES`,
+`CRYPTANALYSIS_HELPERS` and `CODENAME_SCHEMES`, byte-determinism for both
+figures, provenance mutation tests, and a documented-example check that executes
+every worked example in this README, `AGENTS.md` and the quickstart and requires
+its quoted output to appear verbatim. Each was verified to go red when the thing
+it guards is broken. See
+[`docs/testing_philosophy.md`](docs/testing_philosophy.md).
 
 ## Scripts
 

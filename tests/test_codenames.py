@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import random
+from pathlib import Path
 
 import pytest
 
+import bond_utilities.codenames as _codnames
 from bond_utilities.codenames import (
     ADJECTIVES,
     CODENAME_SCHEMES,
@@ -20,8 +22,9 @@ from bond_utilities.codenames import (
     numeric_codename,
     random_codename,
 )
-import bond_utilities.codenames as _codnames
 from bond_utilities.randomness import make_rng
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_word_lists_nonempty_and_uppercase() -> None:
@@ -171,7 +174,7 @@ class TestAlliterative:
         assert adj[0] == noun[0]
         assert adj in ADJECTIVES and noun in NOUNS
 
-    def test_generates_unique_per_index(self) -> None:
+    def test_each_index_shares_an_initial(self) -> None:
         names = codenames_by_scheme(6, seed=1, scheme="alliterative")
         assert len(names) == 6
         for name in names:
@@ -188,3 +191,91 @@ class TestAlliterative:
         monkeypatch.setattr(_codnames, "NOUNS", ())
         with pytest.raises(ValueError, match="no alliterative letter"):
             alliterative_codename(seed=1)
+
+
+class TestSchemeRegistryBinding:
+    """`CODENAME_SCHEMES` bound to the dispatcher, not to a literal copy of itself.
+
+    The literal tuple assertion in :class:`TestSchemes` pins the *order* the
+    manuscript CSV token renders. These tests pin the *content* against the
+    branches `codenames_by_scheme` actually implements, in both directions.
+    """
+
+    def _dispatch_branches(self) -> set[str]:
+        import inspect
+        import re
+
+        source = inspect.getsource(codenames_by_scheme)
+        return set(re.findall(r'if scheme == "([a-z_]+)"', source))
+
+    def test_every_registered_scheme_has_a_dispatch_branch(self) -> None:
+        missing = set(CODENAME_SCHEMES) - self._dispatch_branches()
+        assert not missing, f"CODENAME_SCHEMES entries with no dispatch branch: {sorted(missing)}"
+
+    def test_every_dispatch_branch_is_registered(self) -> None:
+        """Reverse direction: a new branch must join the registry."""
+        unregistered = self._dispatch_branches() - set(CODENAME_SCHEMES)
+        assert not unregistered, f"dispatch branches missing from CODENAME_SCHEMES: {sorted(unregistered)}"
+
+    def test_every_registered_scheme_actually_generates(self) -> None:
+        for scheme in CODENAME_SCHEMES:
+            names = codenames_by_scheme(3, seed=11, scheme=scheme)
+            assert len(names) == 3
+            assert all(name and isinstance(name, str) for name in names)
+            assert names == codenames_by_scheme(3, seed=11, scheme=scheme)
+
+    def test_unregistered_scheme_is_rejected(self) -> None:
+        assert "bifid" not in CODENAME_SCHEMES
+        with pytest.raises(ValueError, match="unknown scheme"):
+            codenames_by_scheme(2, seed=1, scheme="bifid")
+
+
+def _shared_initials() -> set[str]:
+    """Initials carried by at least one adjective AND one noun."""
+    return {adj[0] for adj in ADJECTIVES} & {noun[0] for noun in NOUNS}
+
+
+def _distinct_alliterative_pairs() -> set[tuple[str, str]]:
+    """Every ADJ-NOUN pair the bundled word lists can produce."""
+    return {(adj, noun) for adj in ADJECTIVES for noun in NOUNS if adj[0] == noun[0]}
+
+
+class TestAlliterativeCapacity:
+    """The alliterative scheme is small and repeats — pin that, do not imply otherwise.
+
+    `adjective_noun` samples without replacement and raises above capacity.
+    `alliterative` seeds each index independently, so a sample of N names can
+    (and for the manuscript's own configured sample does) contain duplicates.
+    The manuscript and docs state this; these tests bind the statement.
+    """
+
+    def test_capacity_is_tiny_relative_to_the_default_grid(self) -> None:
+        assert len(_shared_initials()) == 5
+        assert len(_distinct_alliterative_pairs()) == 9
+        assert len(_distinct_alliterative_pairs()) < len(ADJECTIVES) * len(NOUNS)
+
+    def test_every_generated_name_is_within_capacity(self) -> None:
+        pairs = _distinct_alliterative_pairs()
+        for index in range(40):
+            adj, noun = codenames_by_scheme(1, seed=index, scheme="alliterative")[0].split("-")
+            assert (adj, noun) in pairs
+
+    def test_scheme_repeats_names_within_one_sample(self) -> None:
+        """The documented behaviour: duplicates are possible, not an error."""
+        names = codenames_by_scheme(9, seed=20260804, scheme="alliterative")
+        assert len(set(names)) < len(names), "expected a collision from independent per-index seeding"
+
+    def test_manuscript_sample_contains_a_duplicate(self) -> None:
+        """The exact sample printed in 03_results.md repeats a name."""
+        from bond_utilities.manuscript_variables import generate_variables, load_mission_config
+
+        config = load_mission_config(PROJECT_ROOT)
+        variables = generate_variables(config=config)
+        names = variables["RESULT_SCHEME_SAMPLE"].split(", ")
+        assert len(names) == int(variables["CONFIG_NUM_CODENAMES"])
+        assert len(set(names)) < len(names)
+
+    def test_default_scheme_never_repeats(self) -> None:
+        """Contrast: adjective_noun samples without replacement."""
+        names = generate_codenames(20, seed=20260804)
+        assert len(set(names)) == len(names)

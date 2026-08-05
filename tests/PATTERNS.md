@@ -27,10 +27,13 @@ assert "SILENT-JAGUAR" in stream.getvalue()
 Use `tmp_path` (pytest) for files, or `temp_dir()` from
 `src/bond_utilities/testing.py` in non-fixture code.
 
-## Shared fixtures
+## Shared test surface
 
-`conftest.py` re-exports fixtures from `src/bond_utilities/testing.py`
-(`seeded_rng`, `mission_record`, `temp_dir`, `seeded_codenames`).
+`conftest.py` re-exports four names from `src/bond_utilities/testing.py`, but
+only two of them are pytest fixtures: `seeded_rng` and `mission_record`, which
+can be requested by name in a test signature. `temp_dir` is a context manager
+and `seeded_codenames` is a plain function — call them directly.
+`test_testing.py::TestSharedSurfaceShape` asserts that split.
 
 ## Subprocess smoke
 
