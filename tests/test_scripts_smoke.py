@@ -115,8 +115,7 @@ class TestCryptanalyze:
 
 
 class TestZGenerateManuscriptVariables:
-    def test_writes_variables_and_figures(self, tmp_path: Path) -> None:
-        # Run from a COPY of the tree? No: the script resolves its own root.
+    def test_writes_variables_and_figures(self) -> None:
         proc = _run("z_generate_manuscript_variables.py")
         assert proc.returncode == 0, proc.stderr
         data = PROJECT_ROOT / "output" / "data" / "manuscript_variables.json"
@@ -130,7 +129,27 @@ class TestZGenerateManuscriptVariables:
         assert variables["CIPHER_COUNT"] == "9"
         assert fig.stat().st_size > 0
         assert freq.stat().st_size > 0
+        assert proc.stdout.count("rendered figure ->") == 2
 
-    def test_no_figure_flag(self) -> None:
-        proc = _run("z_generate_manuscript_variables.py", "--no-figure")
+    def test_no_figure_flag_renders_no_figures(self, tmp_path: Path) -> None:
+        """`--no-figure` must actually skip rendering, not merely exit zero."""
+        fig = PROJECT_ROOT / "output" / "figures" / "mission_schedule.png"
+        freq = PROJECT_ROOT / "output" / "figures" / "letter_frequency.png"
+        assert _run("z_generate_manuscript_variables.py").returncode == 0
+        before = (fig.read_bytes(), freq.read_bytes(), fig.stat().st_mtime_ns, freq.stat().st_mtime_ns)
+
+        proc = _run("z_generate_manuscript_variables.py", "--no-figure", cwd=tmp_path)
+
         assert proc.returncode == 0, proc.stderr
+        assert "rendered figure ->" not in proc.stdout
+        assert "wrote " in proc.stdout
+        after = (fig.read_bytes(), freq.read_bytes(), fig.stat().st_mtime_ns, freq.stat().st_mtime_ns)
+        assert after == before, "--no-figure still touched the figure artifacts"
+
+    def test_figures_anchor_to_project_root_not_cwd(self, tmp_path: Path) -> None:
+        """Artifacts land in the project tree wherever the script is invoked from."""
+        proc = _run("z_generate_manuscript_variables.py", cwd=tmp_path)
+        assert proc.returncode == 0, proc.stderr
+        assert not (tmp_path / "output").exists(), "figures leaked into the working directory"
+        assert (PROJECT_ROOT / "output" / "figures" / "mission_schedule.png").exists()
+        assert (PROJECT_ROOT / "output" / "figures" / "letter_frequency.png").exists()

@@ -25,11 +25,31 @@ Known tokens (generated from `manuscript/config.yaml`):
 | `RESULT_SCHEME_SAMPLE` | `codenames_by_scheme(..., "alliterative")` |
 | `CIPHER_COUNT` | `ciphers.CIPHER_NAMES` length |
 | `CIPHER_NAMES_CSV` | `", ".join(CIPHER_NAMES)` |
-| `CODENAME_SCHEMES` | `", ".join(CODENAME_SCHEMES)` |
+| `CODENAME_SCHEMES` | `", ".join(codenames.CODENAME_SCHEMES)` |
+| `CODENAME_SCHEME_COUNT` | `codenames.CODENAME_SCHEMES` length |
 | `CRYPTANALYSIS_HELPERS` | `ciphers.CRYPTANALYSIS_HELPERS` length |
+| `SEEDED_HELPER_COUNT` | `randomness.SEEDED_HELPERS` length |
+| `SEEDED_HELPERS_CSV` | `", ".join(randomness.SEEDED_HELPERS)` |
 | `NATO_EXAMPLE` | `nato_codename("QB7")` |
-| `WORDLIST_SIZE` | `codenames.ADJECTIVES × NOUNS` |
+| `WORDLIST_SIZE` | `len(ADJECTIVES) x len(NOUNS)` grid shape |
+| `WORDLIST_CAPACITY` | `len(ADJECTIVES) * len(NOUNS)` unique pairs |
+| `COVERAGE_GATE_PERCENT` | `testing.coverage_gate_percent` (asserted equal to `pyproject.toml` `fail_under`) |
+| `MAX_TEST_FAILURES` | `testing.max_test_failures` |
 | `GENERATION_TIMESTAMP` | run timestamp (UTC) |
+
+## The numeral guard
+
+`tests/test_manuscript_variables.py::TestNoHandAuthoredNumbers` scans
+`00_abstract.md`, `03_results.md`, `04_conclusion.md`, and
+`06_reproducibility.md` for digits that are **not** inside a `{{TOKEN}}`,
+inline or fenced code, a link/image target, a Pandoc attribute brace, or the
+short allow-list of non-metric identifiers (`SHA-256`, `ISO-8601`, `UTF-8`,
+`A-Z`). Any survivor fails the suite. The guard ships with a positive control
+asserting the scrubber still detects a planted number, so it cannot quietly go
+vacuous.
+
+If you need to state a new quantity: add it to `generate_variables()` first,
+then reference the token. Never type the number.
 
 ## Figure references
 

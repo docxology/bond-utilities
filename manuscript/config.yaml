@@ -5,7 +5,7 @@
 paper:
   title: "Q-Branch Field Utility Library"
   subtitle: "Cipher, Codename, Clock, Randomness, and Provenance Primitives for Mission Operations"
-  version: "0.2.0"
+  version: "0.3.0"
   date: "2026-08-04"
 
 authors:
@@ -17,6 +17,7 @@ authors:
 
 keywords:
   - "classical ciphers"
+  - "cryptanalysis"
   - "deterministic codenames"
   - "mission scheduling"
   - "seeded randomness"
@@ -42,5 +43,10 @@ mission:
     start: "2026-08-06T12:00:00Z"
     end: "2026-08-08T12:00:00Z"
 
+# Quality-gate parameters. The manuscript quotes these through the
+# {{COVERAGE_GATE_PERCENT}} / {{MAX_TEST_FAILURES}} tokens; the enforced value
+# lives in pyproject.toml ([tool.coverage.report] fail_under) and
+# tests/test_manuscript_variables.py asserts the two agree.
 testing:
   max_test_failures: 0
+  coverage_gate_percent: 90

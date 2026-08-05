@@ -299,6 +299,9 @@ def append_outcome(record_path: str | Path, outcome_update: dict, fmt: str | Non
     Provenance (input hash, seed, schema version) is preserved untouched;
     only ``outcomes`` is extended.
 
+    A record that carries no ``outcomes`` key yet (the key is optional under
+    :data:`MISSION_SCHEMA`) starts from an empty mapping rather than raising.
+
     Args:
         record_path: Path to an existing mission record file.
         outcome_update: Mapping merged into ``record["outcomes"]``.
@@ -312,7 +315,8 @@ def append_outcome(record_path: str | Path, outcome_update: dict, fmt: str | Non
             :func:`load_record` / :func:`save_record`.
     """
     record = load_record(record_path)
-    outcomes = dict(record["outcomes"])
+    existing = record.get("outcomes")
+    outcomes = dict(existing) if isinstance(existing, dict) else {}
     outcomes.update(outcome_update)
     record["outcomes"] = outcomes
     save_record(record, record_path, fmt=fmt)
@@ -322,10 +326,15 @@ def append_outcome(record_path: str | Path, outcome_update: dict, fmt: str | Non
 __all__ = [
     "MISSION_SCHEMA_VERSION",
     "MISSION_SCHEMA",
+    "OPTIONAL_KEYS",
     "MissionValidationError",
     "hash_payload",
     "validate_record",
     "save_record",
     "load_record",
+    "load_records",
     "record_provenance_outcome",
+    "record_summary",
+    "append_outcome",
+    "verify_provenance",
 ]

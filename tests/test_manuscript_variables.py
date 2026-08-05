@@ -9,6 +9,8 @@ import pytest
 
 from bond_utilities.manuscript_variables import (
     CONFIG_RELATIVE,
+    DEFAULT_COVERAGE_GATE_PERCENT,
+    DEFAULT_MAX_TEST_FAILURES,
     generate_variables,
     load_mission_config,
 )
@@ -77,9 +79,15 @@ class TestGenerateVariables:
             "CIPHER_COUNT",
             "CIPHER_NAMES_CSV",
             "CODENAME_SCHEMES",
+            "CODENAME_SCHEME_COUNT",
             "CRYPTANALYSIS_HELPERS",
+            "SEEDED_HELPER_COUNT",
+            "SEEDED_HELPERS_CSV",
             "NATO_EXAMPLE",
             "WORDLIST_SIZE",
+            "WORDLIST_CAPACITY",
+            "COVERAGE_GATE_PERCENT",
+            "MAX_TEST_FAILURES",
             "GENERATION_TIMESTAMP",
         }
         assert set(a.keys()) == expected
@@ -99,10 +107,32 @@ class TestGenerateVariables:
             "caesar, vigenere, one_time_pad, xor, atbash, beaufort, rail_fence, playfair, columnar"
         )
         assert v["CODENAME_SCHEMES"] == "adjective_noun, alliterative, nato, numeric, token"
+        assert v["CODENAME_SCHEME_COUNT"] == "5"
+        assert v["SEEDED_HELPER_COUNT"] == "7"
+        assert v["SEEDED_HELPERS_CSV"].startswith("seeded_bytes, seeded_int")
         assert v["WORDLIST_SIZE"] == "12 x 12"
+        assert v["WORDLIST_CAPACITY"] == "144"
         assert v["GENERATION_TIMESTAMP"] == "2026-08-04T12:00:00+00:00"
         assert v["CONFIG_SCHEDULE_START"] == "2026-08-04T00:00:00+00:00"
         assert v["CONFIG_SCHEDULE_END"] == "2026-08-10T00:00:00+00:00"
+
+    def test_quality_gate_tokens_default_when_testing_section_absent(self) -> None:
+        v = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
+        assert v["COVERAGE_GATE_PERCENT"] == str(DEFAULT_COVERAGE_GATE_PERCENT)
+        assert v["MAX_TEST_FAILURES"] == str(DEFAULT_MAX_TEST_FAILURES)
+
+    def test_quality_gate_tokens_read_the_testing_section(self) -> None:
+        config = dict(FULL_CONFIG)
+        config["testing"] = {"coverage_gate_percent": 95, "max_test_failures": 2}
+        v = generate_variables(config=config, now=FIXED_NOW)
+        assert v["COVERAGE_GATE_PERCENT"] == "95"
+        assert v["MAX_TEST_FAILURES"] == "2"
+
+    def test_non_mapping_testing_section_falls_back_to_defaults(self) -> None:
+        config = dict(FULL_CONFIG)
+        config["testing"] = "not-a-mapping"
+        v = generate_variables(config=config, now=FIXED_NOW)
+        assert v["COVERAGE_GATE_PERCENT"] == str(DEFAULT_COVERAGE_GATE_PERCENT)
 
     def test_now_none_uses_wall_clock(self) -> None:
         from datetime import datetime as dt
@@ -181,3 +211,114 @@ class TestManuscriptCrossReference:
         assert used, "manuscript uses no tokens (nothing to cross-reference)"
         missing = used - set(variables)
         assert not missing, f"manuscript tokens missing from generate_variables: {sorted(missing)}"
+
+
+#: Standard/algorithm identifiers that contain digits but are names, not metrics.
+#: Deliberately short and explicit — anything not on this list must be a token.
+NON_METRIC_IDENTIFIERS = ("SHA-256", "ISO-8601", "ISO 8601", "UTF-8", "A-Z")
+
+
+def _strip_non_prose(markdown: str) -> str:
+    """Remove everything that legitimately carries digits from manuscript prose.
+
+    Fenced code, inline code, ``{{TOKEN}}`` substitutions, markdown link/image
+    targets, Pandoc attribute braces (``{#fig:x width=70%}``), and the named
+    non-metric identifiers in :data:`NON_METRIC_IDENTIFIERS` are all removed;
+    what remains is the author's own quantitative sentences.
+    """
+    import re
+
+    text = re.sub(r"```.*?```", " ", markdown, flags=re.DOTALL)
+    text = re.sub(r"`[^`]*`", " ", text)
+    text = re.sub(r"\{\{[A-Z0-9_]+\}\}", " ", text)
+    text = re.sub(r"\]\([^)]*\)", " ", text)
+    text = re.sub(r"\{[^}]*\}", " ", text)
+    for identifier in NON_METRIC_IDENTIFIERS:
+        text = text.replace(identifier, " ")
+    return text
+
+
+#: Sections that make quantitative claims; every number in them must be a token.
+QUANTITATIVE_SECTIONS = (
+    "00_abstract.md",
+    "03_results.md",
+    "04_conclusion.md",
+    "06_reproducibility.md",
+)
+
+
+class TestNoHandAuthoredNumbers:
+    """Numbers in quantitative prose must arrive as generated `{{TOKEN}}`s."""
+
+    def test_stripper_still_detects_a_hand_authored_number(self) -> None:
+        """Positive control: the guard below is only meaningful if this fails."""
+        planted = "The suite ships 9 ciphers and `9` more.\n\n![c](a/9.png){width=70%}"
+        residue = _strip_non_prose(planted)
+        assert "9" in residue, "stripper is too aggressive — the guard would be vacuous"
+
+    def test_stripper_removes_every_legitimate_digit_carrier(self) -> None:
+        clean = (
+            "Value {{CIPHER_COUNT}} hashed with SHA-256 per ISO-8601, "
+            "in `caesar_9` see [x](y/1.png){#fig:a width=70%}\n```\n42\n```"
+        )
+        assert not any(char.isdigit() for char in _strip_non_prose(clean))
+
+    def test_non_metric_allowlist_does_not_swallow_a_neighbouring_number(self) -> None:
+        """The allowlist strips exact identifiers only — a real metric survives."""
+        residue = _strip_non_prose("SHA-256 covers 9 records under ISO-8601.")
+        assert "9" in residue
+
+    def test_quantitative_sections_contain_no_bare_numerals(self) -> None:
+        import re
+
+        offenders: list[str] = []
+        for name in QUANTITATIVE_SECTIONS:
+            section = PROJECT_ROOT / "manuscript" / name
+            assert section.exists(), f"missing manuscript section {name}"
+            for line_number, line in enumerate(_strip_non_prose(section.read_text()).splitlines(), 1):
+                if re.search(r"\d", line):
+                    offenders.append(f"{name}:{line_number}: {line.strip()}")
+        assert not offenders, "hand-authored numbers in quantitative prose:\n" + "\n".join(offenders)
+
+
+class TestGateNumbersAgreeWithEnforcement:
+    """Prose gate numbers must equal the values actually enforced by tooling."""
+
+    def _pyproject(self) -> str:
+        return (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    def test_coverage_token_matches_pyproject_fail_under(self) -> None:
+        import re
+
+        match = re.search(r"^fail_under\s*=\s*(\d+)", self._pyproject(), flags=re.MULTILINE)
+        assert match, "pyproject.toml has no [tool.coverage.report] fail_under"
+        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        assert variables["COVERAGE_GATE_PERCENT"] == match.group(1)
+
+    def test_setup_section_python_floor_matches_pyproject(self) -> None:
+        import re
+
+        match = re.search(r'requires-python\s*=\s*">=([\d.]+)"', self._pyproject())
+        assert match, "pyproject.toml has no requires-python floor"
+        setup = (PROJECT_ROOT / "manuscript" / "05_experimental_setup.md").read_text(encoding="utf-8")
+        assert f"Python ≥ {match.group(1)}" in setup
+
+
+class TestVersionConsistency:
+    """One version, three declaration sites — they must not drift apart."""
+
+    def test_package_pyproject_and_config_agree(self) -> None:
+        import re
+
+        import bond_utilities
+
+        pyproject = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        declared = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, flags=re.MULTILINE)
+        assert declared, "pyproject.toml has no [project] version"
+
+        config_version = load_mission_config(PROJECT_ROOT)["paper"]["version"]
+        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+
+        assert bond_utilities.__version__ == declared.group(1)
+        assert config_version == declared.group(1)
+        assert variables["PACKAGE_VERSION"] == declared.group(1)

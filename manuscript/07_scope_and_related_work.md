@@ -11,13 +11,17 @@ secrecy.
 ## Related work
 
 The cipher primitives follow the classical constructions catalogued by Kahn
-[@kahn_codebreakers] and formalised in Shannon's information-theoretic
-treatment of secrecy systems [@shannon_1949]. The cryptanalysis helpers build
-on Friedman's index of coincidence [@friedman_1922] and Kasiski's
-examination for repeated key segments [@kasiski_1863]. Deterministic seeded
-generation uses the Mersenne Twister [@matsumoto_1998] as exposed by Python's
-`random` module. Mission window and elapsed-time semantics follow ISO-8601
-date/time representations [@iso8601].
+[@kahn_codebreakers] and presented as textbook algorithms by Stinson and
+Paterson [@stinson_paterson_2018], and are formalised in Shannon's
+information-theoretic treatment of secrecy systems [@shannon_1949] — which is
+also the reference that makes the one-time pad's key-length requirement
+non-negotiable rather than a stylistic choice. The cryptanalysis helpers build
+on Friedman's index of coincidence [@friedman_1922] and Kasiski's examination
+for repeated key segments [@kasiski_1863]. Deterministic seeded generation uses
+the Mersenne Twister [@matsumoto_1998] as exposed by Python's `random` module;
+that generator is chosen for reproducibility and equidistribution, explicitly
+not for cryptographic unpredictability. Mission window and elapsed-time
+semantics follow ISO-8601 date/time representations [@iso8601].
 
 ## Limitations
 

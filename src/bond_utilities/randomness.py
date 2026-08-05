@@ -22,6 +22,19 @@ R = TypeVar("R")
 
 _MASK32 = 0xFFFFFFFF
 
+#: Names of the seeded draw helpers, in declaration order. Used by reporting
+#: and manuscript variables; ``tests/test_randomness.py`` binds this registry
+#: to the module's real callables so it cannot silently drift.
+SEEDED_HELPERS = (
+    "seeded_bytes",
+    "seeded_int",
+    "seeded_float",
+    "seeded_choice",
+    "seeded_choices",
+    "seeded_shuffle",
+    "seeded_sample",
+)
+
 
 def derive_seed(seed: int | str) -> int:
     """Return a stable, non-negative integer seed usable by ``random.Random``.
@@ -221,6 +234,7 @@ def seeded_sample(seed: int | str, items: Sequence[Any], k: int) -> list[Any]:
 
 
 __all__ = [
+    "SEEDED_HELPERS",
     "derive_seed",
     "make_rng",
     "seeded",

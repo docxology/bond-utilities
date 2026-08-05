@@ -2,7 +2,9 @@
 
 BOND suite — bond-utilities. All tests use **real data and real
 computation**; no mocks. Coverage is measured over `src/` with
-`--cov=src --cov-fail-under=90` (≥90% line+branch; currently 100%).
+`--cov=src --cov-fail-under=90` (line+branch on `src/`; the enforced floor
+is `fail_under` in `pyproject.toml` — read the measured percentage from the run,
+never from a document).
 
 ## Test files
 

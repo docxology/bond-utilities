@@ -15,7 +15,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from bond_utilities import record_provenance_outcome, verify_provenance  # noqa: E402
+from bond_utilities import (  # noqa: E402
+    __version__,
+    record_provenance_outcome,
+    verify_provenance,
+)
 from bond_utilities.reporting import banner, print_kv  # noqa: E402
 
 
@@ -24,7 +28,8 @@ def main() -> int:
     parser.add_argument("--mission-id", required=True, help="stable mission identifier")
     parser.add_argument("--codename", default=None, help="optional mission codename")
     parser.add_argument("--seed", type=str, default="20260804", help="reproducibility seed")
-    parser.add_argument("--version", default="0.2.0", help="package/schema version")
+    # Default reads the live package version so this literal can never drift.
+    parser.add_argument("--version", default=__version__, help="package/schema version")
     parser.add_argument("--payload", default="{}", help="JSON input payload, e.g. '{\"n\": 3}'")
     parser.add_argument("--out", required=True, help="destination file (.json or .yaml)")
     parser.add_argument("--fmt", choices=["json", "yaml"], default=None, help="record format")

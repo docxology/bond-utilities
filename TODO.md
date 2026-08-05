@@ -1,35 +1,69 @@
 # bond-utilities TODO
 
-Forward-only backlog for the bond-utilities package (codename **Q-BRANCH**),
-Layer 0 of the BOND suite.
+Forward-only backlog for **Q-BRANCH** (Layer 0 of the BOND suite). This file
+tracks what is *left*, not what is finished — the shipped surface is described
+in [`README.md`](README.md) and [`docs/architecture.md`](docs/architecture.md),
+and the history is in `git log`. Nothing here quotes a measured coverage
+percentage or test count; those come from the run, not from a document.
 
-## Current status (phase 4 — deep improvement)
+## Open
 
-- **Ciphers** extended to 9 primitives (added Atbash, Beaufort, rail-fence,
-  Playfair, columnar) + **8 cryptanalysis helpers** (letter frequency,
-  normalized frequency, index of coincidence, English chi-squared,
-  Caesar shift scores/break, Kasiski examination, Vigenère break).
-- **Codenames** gained 4 new deterministic schemes (alliterative, NATO,
-  numeric, token) via `codenames_by_scheme` and
-  `generate_codenames(..., scheme=...)` (default unchanged).
-- **Clock** added `windows_overlap`, `merge_windows`, `parse_duration`,
-  `schedule_status`, and the `MissionSchedule` dataclass.
-- **Randomness** added `seeded_bytes/int/float/choice/choices/shuffle/sample`;
-  `ciphers.generate_otp_key` now delegates to `seeded_bytes` (byte-identical).
-- **Mission I/O** added `verify_provenance`, `load_records`,
-  `record_summary`, `append_outcome` (provenance preserved on append).
-- **reporting** added `schedule_table` / `print_schedule_table`; **figures**
-  added `plot_frequency_analysis` (second manuscript figure).
-- **Tests**: 316 passed, 0 skipped, 0 failed; **100%** line+branch coverage
-  on `src/` (gate ≥90%), zero mocks (pytest.MonkeyPatch only, no mock
-  framework).
-- **ruff + mypy**: clean on `src/` and `scripts/`.
-- **Manuscript** updated: new sections/tokens (`CIPHER_NAMES_CSV`,
-  `CODENAME_SCHEMES`, `CRYPTANALYSIS_HELPERS`, `NATO_EXAMPLE`,
-  `RESULT_OVERLAP_HOURS`, `RESULT_SCHEME_SAMPLE`), `fig:freq` figure, and
-  two new bib entries (Friedman 1922, Kasiski 1863).
-- **Zero** `template[_]code_project`-style lineage strings in the tree (the
-  grep command in docs is bracket-split so it cannot trip its own gate).
+### Rendering
+
+- [ ] **Wire a manuscript render pipeline.** Today
+      `scripts/z_generate_manuscript_variables.py` produces the token map and
+      both figures, but nothing substitutes the tokens into a rendered PDF/HTML.
+      Blocked on the suite choosing one renderer so all 33 packages match. Until
+      then, `output/data/manuscript_variables.json` is the deliverable.
+
+### Library gaps
+
+- [ ] **Document (or measure) the `vigenere_break` sample floor.** Recovery is
+      reliable on letter-rich ciphertext, but per-column chi-squared needs
+      enough samples per column, and short texts can mis-estimate a shift. The
+      limitation is stated in `manuscript/07_scope_and_related_work.md`; what is
+      missing is an actual measured minimum-column-length curve to cite, which
+      would need a new experiment and its own token.
+- [ ] **Decide on `generate_codenames(..., allow_repeats=True)`.** The default
+      `adjective_noun` scheme samples without replacement and therefore raises
+      above the word-list capacity. That is the correct default; a documented
+      opt-in for callers who want more names than the grid holds is not built.
+      Only worth doing if a film package actually asks for it.
+- [ ] **Codename word lists are small and curated by hand.** Fine for mission
+      naming, wrong for anything that needs entropy. If a consumer starts
+      treating codenames as identifiers with collision requirements, they need
+      `codename_token` / `numeric_codename` instead — consider making that
+      steering explicit in the API rather than only in prose.
+
+### Suite integration
+
+- [ ] **Confirm the `bond-api` outcome contract against the real dataclasses.**
+      `mission_io.record_provenance_outcome` / `verify_provenance` are the
+      persistence surface bond-api's `MissionOutcome` and `Provenance` are meant
+      to land on, but this package has no test that round-trips an actual
+      bond-api object — it cannot import one (Layer 0 depends on nothing). The
+      binding test belongs in `bond-api`, and this entry is a reminder that the
+      contract is currently asserted only in prose on this side.
+
+### Housekeeping
+
+- [ ] **`build/` reappears on every editable install.** It is gitignored, and
+      the stale copy was deleted, but setuptools recreates it under the package
+      root where it pollutes tree-wide greps with an outdated duplicate of every
+      module. Point the build directory somewhere outside the package root, or
+      delete it after each `uv sync`.
+
+## Non-goals (do not "fix" these)
+
+- **No `mission.py` / `MissionProvider` here.** The protocol belongs to
+  `bond-api`; implementing it in Layer 0 would invert the dependency direction.
+  See [`docs/architecture.md`](docs/architecture.md).
+- **No cryptographic strength.** The cipher suite is educational and
+  deterministic on purpose. Do not "harden" it; do not use it for secrecy.
+- **No new dependencies.** `src/` stays on stdlib + numpy + matplotlib + pyyaml
+  so every consumer's import stays cheap and mock-free.
+- **No renamed or reshaped public API.** The film fleet and Layers 1-4 import
+  from `bond_utilities`. Add; do not rename.
 
 ## Verification
 
@@ -38,34 +72,5 @@ uv run pytest tests/ --cov=src --cov-fail-under=90
 uv run ruff check src/ scripts/
 uv run ruff format --check src/ scripts/
 uv run mypy src/ scripts/
+git status --short
 ```
-
-## Integration point (bond-api)
-
-`src/bond_utilities/mission_io.py::record_provenance_outcome` remains the
-persistence helper bond-api outcomes call. Phase 4 adds
-`verify_provenance` (recompute input hash/seed/version), `append_outcome`
-(merge results without disturbing provenance), `load_records` (directory
-batch load), and `record_summary`. `scripts/record_mission.py` is the thin
-CLI demonstrating the contract (with `--verify`).
-
-## Open items
-
-- [ ] Wire the manuscript render pipeline (PDF/output/manuscript) once the
-      suite chooses a renderer; currently only tokens + both figures are
-      produced.
-- [ ] `vigenere_break` recovers keys reliably on letter-rich ciphertext;
-      document a minimum column-sample guideline (kept in
-      `07_scope_and_related_work.md`).
-- [ ] If the word lists grow beyond 12×12, consider a
-      `generate_codenames(..., allow_repeats=True)` knob (default stays
-      unique).
-- [ ] Keep live test count / coverage out of committed prose; the numbers
-      above are snapshots for this commit only.
-
-## Guardrails honored
-
-Path-scoped, local-only commits · no mock framework · ≥90% coverage · all
-existing public APIs and CLI contracts kept intact · deterministic seeding ·
-thin orchestrators · computed manuscript variables · zero exemplar-lineage
-strings.

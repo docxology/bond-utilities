@@ -33,9 +33,36 @@ An alliterative sample under the same seed:
 
 > {{RESULT_SCHEME_SAMPLE}}
 
-The scheme registry is {{CODENAME_SCHEMES}}; the alliterative scheme yields
-ADJ-NOUN pairs sharing an initial. Word-list capacity for the default scheme
-is {{WORDLIST_SIZE}} unique pairs.
+The scheme registry holds {{CODENAME_SCHEME_COUNT}} entries
+({{CODENAME_SCHEMES}}); the alliterative scheme yields ADJ-NOUN pairs sharing
+an initial. The default scheme draws without replacement from a
+{{WORDLIST_SIZE}} adjective/noun grid, so its capacity is
+{{WORDLIST_CAPACITY}} unique pairs — `generate_codenames` raises above that
+count rather than repeating a name.
+
+## Seeded draw helpers
+
+Reproducible sampling outside the codename engine goes through the
+{{SEEDED_HELPER_COUNT}} helpers in `src/bond_utilities/randomness.py`
+({{SEEDED_HELPERS_CSV}}). Each takes the seed as its first argument and
+constructs a fresh `random.Random`, so draws never depend on call order or on
+the global interpreter RNG. `ciphers.generate_otp_key` delegates to
+`seeded_bytes`, which is why pad material and any other byte draw are
+byte-identical for the same seed. The registry itself is test-bound: a
+discovery test in `tests/test_randomness.py` fails if a helper is added,
+renamed, or dropped without updating `SEEDED_HELPERS`.
+
+## Provenance round-trip
+
+`record_provenance_outcome` writes a record whose `provenance` block holds the
+canonical SHA-256 of the sorted-compact JSON parameters, the schema version,
+and the derived seed. `verify_provenance` recomputes all three from the
+persisted record and returns `False` on any mismatch — the mutation tests in
+`tests/test_mission_io.py` tamper with the parameters, the seed, and the schema
+version in turn and confirm each is rejected, so the check is not satisfiable
+by construction. `append_outcome` merges new results into `outcomes` and leaves
+the provenance block byte-identical, which is what lets a later mission stage
+extend a record without invalidating its audit trail.
 
 ## Mission schedule
 

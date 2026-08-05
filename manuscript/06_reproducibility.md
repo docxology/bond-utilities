@@ -19,8 +19,10 @@ uv run python scripts/z_generate_manuscript_variables.py
 
 - Codenames: `generate_codenames(count, seed=S, scheme=...)` returns the same
   list on every run and machine, for every scheme.
-- Cipher keys and byte draws: `generate_otp_key`/`seeded_bytes(length, seed=S)`
-  return the same bytes.
+- Cipher keys and byte draws: `generate_otp_key(length, seed=S)` delegates to
+  `seeded_bytes(S, length)`, so both return the same bytes for the same seed.
+- Every other seeded helper ({{SEEDED_HELPERS_CSV}}) builds its own
+  `random.Random` from the seed, so a draw never depends on call order.
 - Cryptanalysis: frequency, IC, chi-squared, Kasiski, and Caesar/Vigenère
   breaking are deterministic functions of the input text.
 - Mission records: `record_provenance_outcome` stores the canonical input
@@ -31,8 +33,16 @@ uv run python scripts/z_generate_manuscript_variables.py
 
 ```bash
 uv run pytest tests/ --cov=src --cov-fail-under=90
+uv run ruff check src/ scripts/
+uv run ruff format --check src/ scripts/
+uv run mypy src/ scripts/
 ```
 
-The gate enforces ≥90% line and branch coverage on `src/` (currently 100%),
-with zero skipped and zero failed tests. `ruff check` + `ruff format --check`
-and `mypy src/ scripts/` must pass clean.
+The gate enforces at least {{COVERAGE_GATE_PERCENT}}% line **and** branch
+coverage on `src/`, and tolerates at most {{MAX_TEST_FAILURES}} failing tests.
+Both numbers come from `manuscript/config.yaml`, and a test asserts the
+coverage figure equals the `fail_under` value actually enforced by
+`pyproject.toml` — the prose cannot drift away from the enforced gate. The
+measured coverage of any given run is deliberately not quoted here; run the
+command above to read it. `ruff check`, `ruff format --check`, and
+`mypy src/ scripts/` must also pass clean.

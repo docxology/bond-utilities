@@ -86,6 +86,7 @@ from .mission_io import (
     verify_provenance,
 )
 from .randomness import (
+    SEEDED_HELPERS,
     derive_seed,
     make_rng,
     seeded,
@@ -107,7 +108,7 @@ from .reporting import (
     schedule_table,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # ciphers + cryptanalysis
@@ -183,6 +184,7 @@ __all__ = [
     "append_outcome",
     "verify_provenance",
     # randomness
+    "SEEDED_HELPERS",
     "derive_seed",
     "make_rng",
     "seeded",

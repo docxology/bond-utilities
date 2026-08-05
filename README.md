@@ -6,7 +6,8 @@
 field-utility primitives for mission operations: a classic-cipher suite with
 cryptanalysis helpers, deterministic codenames (several schemes), mission
 clock/schedule math, seeded randomness, provenance mission records, and
-plain-text reporting. Every other bond package imports from it.
+plain-text reporting. Every other bond package imports from it, and it imports
+none of them.
 
 **Principles**
 
@@ -14,6 +15,25 @@ plain-text reporting. Every other bond package imports from it.
 - **Round-trip verified** — every cipher passes `decrypt(encrypt(x)) == x` with real data.
 - **Provenance-first** — mission records carry an input hash, schema version, and seed.
 - **Zero mocks** — tests use real data and real computation only.
+- **Generated numbers** — every metric in the manuscript is a computed token, and
+  a guard test fails the build on a hand-authored one.
+
+## Where this sits in the fleet
+
+| Layer | Package | This package's relationship |
+| --- | --- | --- |
+| 0 | **`bond-utilities`** | You are here. Depends on nothing in the suite. |
+| 1 | `bond-api` | Owns the `MissionProvider` protocol; consumes these primitives. |
+| 2-3 | `bond-coordinator`, `bond-orchestrator` | Mission ledger and DAG runner. |
+| 4 | `bond-cli`, `bond-ops` | Front door and fleet ops. |
+| — | 27 film packages | Each implements `MissionProvider` in its own `mission.py`. |
+
+**This package has no `mission.py` and no `GADGETS` registry, by design.** The
+`MissionProvider` protocol (`brief`/`recon`/`plan`/`execute`/`debrief`) lives in
+`bond-api`, one layer up; implementing it here would invert the dependency
+direction. What Q-Branch contributes to the mission lifecycle is the seeding,
+codename, schedule, and provenance-record surface those providers are built
+from — see [`docs/architecture.md`](docs/architecture.md).
 
 ## Install
 
@@ -37,12 +57,14 @@ uv run pytest tests/ --cov=src --cov-fail-under=90
 | Module | What it gives you |
 | --- | --- |
 | `ciphers` | 9 ciphers (Caesar, Vigenère, OTP, XOR, Atbash, Beaufort, rail-fence, Playfair, columnar) + 8 cryptanalysis helpers (frequency, IC, chi-squared, Caesar/Vigenère breaking, Kasiski) + codename encoding |
-| `codenames` | 5 deterministic schemes: adjective–noun, alliterative, NATO, numeric, token |
-| `clock` | `elapsed_time`, `window_open/elapsed/remaining`, `windows_overlap`, `merge_windows`, `parse_duration`, `t_minus`, `MissionSchedule` |
-| `randomness` | `derive_seed`, `make_rng`, `seeded`, `seeded_bytes/int/float/choice/choices/shuffle/sample` |
+| `codenames` | 5 deterministic schemes (adjective–noun, alliterative, NATO, numeric, token) over curated 12x12 word pools, plus `codename_for` for a stable per-mission name |
+| `clock` | `elapsed_time`, `window_open/elapsed/remaining`, `windows_overlap`, `merge_windows`, `parse_duration`, `schedule_status`, `t_minus`, and the frozen `MissionSchedule` dataclass — all half-open `[start, end)` UTC math |
+| `randomness` | `derive_seed`, `make_rng`, the `seeded` decorator, and the `SEEDED_HELPERS` draw set (`seeded_bytes/int/float/choice/choices/shuffle/sample`) |
 | `mission_io` | JSON/YAML record save/load, schema validation, `record_provenance_outcome`, `verify_provenance`, `append_outcome`, `load_records`, `record_summary` |
-| `reporting` | `format_table`, `format_kv`, `banner`, `schedule_table`, stream print helpers |
-| `testing` | Shared pytest fixtures (`seeded_rng`, `mission_record`, `temp_dir`, `seeded_codenames`) |
+| `reporting` | `format_table`, `format_kv`, `banner`, `schedule_table`, and stream print helpers whose stdout default resolves at call time |
+| `manuscript_variables` | Computes the whole `{{TOKEN}}` map for the manuscript from `manuscript/config.yaml` |
+| `figures/plots` | Deterministic `plot_mission_schedule` and `plot_frequency_analysis` PNGs |
+| `testing` | Shared pytest fixtures (`seeded_rng`, `mission_record`, `temp_dir`, `seeded_codenames`) — import-light so consumers never pull numpy, matplotlib, or a mock framework |
 
 ## Usage
 
@@ -107,10 +129,12 @@ deck = seeded_shuffle(7, list(range(52)))
 ### Provenance mission records (bond-api integration point)
 
 ```python
-from bond_utilities import record_provenance_outcome, verify_provenance, append_outcome
+from bond_utilities import (
+    __version__, append_outcome, record_provenance_outcome, verify_provenance,
+)
 
 record = record_provenance_outcome(
-    mission_id="M-001", seed="ops", version="0.2.0",
+    mission_id="M-001", seed="ops", version=__version__,
     input_payload={"target": "grid", "count": 3},
     outcome={"matched_refs": 3, "status": "ok"},
     path="output/data/missions/M-001.json",
@@ -130,14 +154,22 @@ print(format_table([["1", "SILENT-JAGUAR"]], headers=["#", "codename"]))
 ## Testing
 
 ```bash
-uv run pytest tests/ --cov=src --cov-fail-under=90      # ≥90% line+branch on src/
+uv run pytest tests/ --cov=src --cov-fail-under=90      # line+branch on src/
 uv run ruff check src/ scripts/
 uv run ruff format --check src/ scripts/
 uv run mypy src/ scripts/
 ```
 
-Current gate: **100%** line+branch coverage on `src/` (316 tests), 0 skipped,
-0 failed, zero mocks.
+**The gate, not a snapshot.** The enforced coverage floor is the `fail_under`
+value in `pyproject.toml → [tool.coverage.report]`; the manuscript quotes that
+same number through a generated token, and a test asserts the two agree. No
+measured percentage or test count is pasted into this README — run the command
+above and read the real number, which is the only one that is ever current.
+
+Beyond line coverage, the suite carries guards designed to fail: a manuscript
+token cross-reference, a bare-numeral guard (with a positive control), `__all__`
+completeness checks, a `SEEDED_HELPERS` registry-drift check, and provenance
+mutation tests. See [`docs/testing_philosophy.md`](docs/testing_philosophy.md).
 
 ## Scripts
 

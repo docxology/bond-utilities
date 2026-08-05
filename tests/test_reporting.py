@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import io
 from datetime import datetime, timezone
 
@@ -95,6 +96,20 @@ class TestPrintHelpers:
         print_kv([("path", "/tmp/x.json")], stream=stream)
         assert "/tmp/x.json" in stream.getvalue()
 
+    def test_default_stream_follows_redirected_stdout(self) -> None:
+        """The stdout default resolves at call time, not at import time.
+
+        Binding ``stream=sys.stdout`` in the signature would capture the
+        interpreter's original stdout, and this redirect would capture nothing.
+        """
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            print_table([["1", "SILENT-JAGUAR"]], headers=["#", "codename"])
+            print_kv([("mission", "M-001")])
+        captured = buffer.getvalue()
+        assert "SILENT-JAGUAR" in captured
+        assert "mission : M-001" in captured
+
 
 class TestScheduleTable:
     def _windows(self) -> list[MissionSchedule]:
@@ -127,3 +142,9 @@ class TestScheduleTable:
         stream = io.StringIO()
         print_schedule_table(self._windows(), now=datetime(2026, 8, 5, tzinfo=timezone.utc), stream=stream)
         assert "grid" in stream.getvalue()
+
+    def test_default_stream_follows_redirected_stdout(self) -> None:
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            print_schedule_table(self._windows(), now=datetime(2026, 8, 5, tzinfo=timezone.utc))
+        assert "grid" in buffer.getvalue()

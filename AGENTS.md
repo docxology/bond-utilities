@@ -6,7 +6,7 @@ ciphers, deterministic codenames, mission clock math, seeded randomness,
 mission-record persistence with provenance, plain-text reporting, and shared
 test fixtures.
 
-**Codename:** Q-BRANCH · **Version:** 0.2.0 · **License:** MIT
+**Codename:** Q-BRANCH · **Version:** 0.3.0 · **License:** MIT
 
 This is a **LOCAL-ONLY working tree** — there is no remote and nothing is
 ever pushed.
@@ -99,32 +99,41 @@ open_now = window_open(*win, now=datetime(2026, 8, 6, tzinfo=timezone.utc))  # T
 ### Seeded randomness
 
 ```python
-from bond_utilities import make_rng, seeded
-from bond_utilities.randomness import seeded
+import random
 
-rng = make_rng("ops")            # reproducible generator
+from bond_utilities import SEEDED_HELPERS, make_rng, seeded, seeded_bytes
+
+rng = make_rng("ops")            # reproducible generator, fresh per call
+key = seeded_bytes("ops", 32)    # 32 deterministic bytes from the same seed
+print(SEEDED_HELPERS)            # the registry the manuscript counts
 
 @seeded(20260804)
 def draw() -> float:
-    import random
+    # The global `random` module is seeded for this call and restored after.
     return random.random()
 ```
 
 ### Provenance mission records (bond-api integration point)
 
 ```python
-from bond_utilities import record_provenance_outcome
+from bond_utilities import __version__, record_provenance_outcome, verify_provenance
 
 record = record_provenance_outcome(
     mission_id="M-001",
     seed="ops",
-    version="0.1.0",
+    version=__version__,
     input_payload={"target": "grid", "count": 3},
     outcome={"matched_refs": 3, "status": "ok"},
     path="output/data/missions/M-001.json",
 )
 # record["provenance"]["input_hash"] reproducibly fingerprints the inputs.
+assert verify_provenance(record)   # recomputes hash + seed + schema version
 ```
+
+**No `MissionProvider` here.** The protocol (`brief`/`recon`/`plan`/`execute`/
+`debrief`) and the `GADGETS` registry belong to `bond-api` and the film
+packages. Layer 0 supplies the primitives those providers are built from — see
+[`docs/architecture.md`](docs/architecture.md) for the boundary and rationale.
 
 ### Reporting
 
@@ -138,14 +147,23 @@ print(format_table([["1", "SILENT-JAGUAR"]], headers=["#", "codename"]))
 ## Testing
 
 ```bash
-uv run pytest tests/ --cov=src --cov-fail-under=90      # ≥90% line+branch on src/
+uv run pytest tests/ --cov=src --cov-fail-under=90      # line+branch on src/
 uv run ruff check src/ scripts/
 uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/
+uv run mypy src/ scripts/                               # mypy_path="src" in pyproject
+rg -n "unittest\.mock|MagicMock|@patch|create_autospec" tests/ || echo clean
 ```
 
-Current gate: **100%** line+branch coverage on `src/` (316 tests), 0 skipped,
-0 failed, zero mocks.
+The enforced floor is `pyproject.toml → [tool.coverage.report] fail_under`.
+Measured coverage and test counts are intentionally **not** quoted in this file
+— run the command and read them. Quoting a snapshot here guarantees it is stale
+by the next commit, and a stale number in an AGENTS file is worse than none.
+
+Falsifiable guards in the suite (details in
+[`docs/testing_philosophy.md`](docs/testing_philosophy.md)): manuscript token
+cross-reference, hand-authored-numeral guard with a positive control,
+`__all__` completeness, `SEEDED_HELPERS` registry drift, provenance mutation
+rejection, figure byte-determinism, and CLI flag behaviour.
 
 ## Scripts
 

@@ -18,9 +18,13 @@ never hardcode them.
 | Overlap with secondary window | {{RESULT_OVERLAP_HOURS}} hours |
 | Cipher primitives | {{CIPHER_COUNT}} |
 | Cipher registry | {{CIPHER_NAMES_CSV}} |
-| Codename schemes | {{CODENAME_SCHEMES}} |
+| Codename schemes | {{CODENAME_SCHEME_COUNT}} ({{CODENAME_SCHEMES}}) |
 | Cryptanalysis helpers | {{CRYPTANALYSIS_HELPERS}} |
-| Word-list capacity | {{WORDLIST_SIZE}} |
+| Seeded draw helpers | {{SEEDED_HELPER_COUNT}} ({{SEEDED_HELPERS_CSV}}) |
+| Word-list grid | {{WORDLIST_SIZE}} |
+| Word-list capacity (unique pairs) | {{WORDLIST_CAPACITY}} |
+| Coverage gate | {{COVERAGE_GATE_PERCENT}}% line + branch on `src/` |
+| Tolerated test failures | {{MAX_TEST_FAILURES}} |
 | Generation timestamp | {{GENERATION_TIMESTAMP}} |
 
 ## Software environment

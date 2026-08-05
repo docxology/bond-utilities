@@ -17,12 +17,17 @@ from .ciphers import CIPHER_NAMES, CRYPTANALYSIS_HELPERS
 from .clock import parse_schedule, windows_overlap
 from .codenames import (
     ADJECTIVES,
-    NOUNS,
     CODENAME_SCHEMES,
+    NOUNS,
     codenames_by_scheme,
     generate_codenames,
     nato_codename,
 )
+from .randomness import SEEDED_HELPERS
+
+#: Fallback quality-gate values when ``config.yaml`` omits a ``testing`` section.
+DEFAULT_COVERAGE_GATE_PERCENT = 90
+DEFAULT_MAX_TEST_FAILURES = 0
 
 #: Manuscript config path, relative to the project root.
 CONFIG_RELATIVE = Path("manuscript") / "config.yaml"
@@ -94,6 +99,12 @@ def generate_variables(
     scheme_sample = codenames_by_scheme(num_codenames, seed=seed, scheme="alliterative")
     stamp = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
 
+    testing = loaded.get("testing")
+    if not isinstance(testing, dict):
+        testing = {}
+    coverage_gate = testing.get("coverage_gate_percent", DEFAULT_COVERAGE_GATE_PERCENT)
+    max_failures = testing.get("max_test_failures", DEFAULT_MAX_TEST_FAILURES)
+
     return {
         "MISSION_CODENAME": str(mission.get("codename", "Q-BRANCH")),
         "PACKAGE_VERSION": str(paper.get("version", "0.1.0")),
@@ -108,11 +119,23 @@ def generate_variables(
         "CIPHER_COUNT": str(len(CIPHER_NAMES)),
         "CIPHER_NAMES_CSV": ", ".join(CIPHER_NAMES),
         "CODENAME_SCHEMES": ", ".join(CODENAME_SCHEMES),
+        "CODENAME_SCHEME_COUNT": str(len(CODENAME_SCHEMES)),
         "CRYPTANALYSIS_HELPERS": str(len(CRYPTANALYSIS_HELPERS)),
+        "SEEDED_HELPER_COUNT": str(len(SEEDED_HELPERS)),
+        "SEEDED_HELPERS_CSV": ", ".join(SEEDED_HELPERS),
         "NATO_EXAMPLE": nato_codename("QB7"),
         "WORDLIST_SIZE": f"{len(ADJECTIVES)} x {len(NOUNS)}",
+        "WORDLIST_CAPACITY": str(len(ADJECTIVES) * len(NOUNS)),
+        "COVERAGE_GATE_PERCENT": str(coverage_gate),
+        "MAX_TEST_FAILURES": str(max_failures),
         "GENERATION_TIMESTAMP": stamp,
     }
 
 
-__all__ = ["CONFIG_RELATIVE", "load_mission_config", "generate_variables"]
+__all__ = [
+    "CONFIG_RELATIVE",
+    "DEFAULT_COVERAGE_GATE_PERCENT",
+    "DEFAULT_MAX_TEST_FAILURES",
+    "load_mission_config",
+    "generate_variables",
+]

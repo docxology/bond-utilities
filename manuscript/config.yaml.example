@@ -9,7 +9,7 @@ this file (or derived deterministically from it) by
 paper:
   title: "Q-Branch Field Utility Library"
   subtitle: "Cipher, Codename, Clock, Randomness, and Provenance Primitives for Mission Operations"
-  version: "0.2.0"
+  version: "0.3.0"
   date: "2026-08-04"
 
 authors:
@@ -46,7 +46,9 @@ mission:
     end:   "2026-08-08T12:00:00Z"
 
 testing:
-  max_test_failures: 0
+  max_test_failures: 0            # {{MAX_TEST_FAILURES}}
+  coverage_gate_percent: 90       # {{COVERAGE_GATE_PERCENT}} (must equal
+                                  # pyproject [tool.coverage.report] fail_under)
 ```
 
 ## Editing protocol

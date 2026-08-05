@@ -43,11 +43,14 @@ def main() -> int:
 
     rendered: list[Path] = []
     if not args.no_figure:
+        # Figure paths are anchored to the project root (not the working
+        # directory) so the artifact tree is identical wherever this is run.
+        figure_dir = project_root / "output" / "figures"
         config = load_mission_config(project_root)
         start, end = parse_schedule(config["mission"]["schedule"])
-        rendered.append(plot_mission_schedule(start, end))
+        rendered.append(plot_mission_schedule(start, end, path=figure_dir / "mission_schedule.png"))
         sample_text = " ".join(variables["RESULT_CODENAME_SAMPLE"].split(", "))
-        rendered.append(plot_frequency_analysis(sample_text))
+        rendered.append(plot_frequency_analysis(sample_text, path=figure_dir / "letter_frequency.png"))
 
     print(f"wrote {len(variables)} variables -> {out}")
     for path in rendered:

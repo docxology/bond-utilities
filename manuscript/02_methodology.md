@@ -33,9 +33,11 @@ the digraph cipher round-trips against its prepared (X-split, padded) form.
 `derive_seed` folds integer seeds to 32 bits and hashes string seeds
 (`int(sha256(seed)[0:8], 16)`). `make_rng(seed)` returns a fresh
 `random.Random`; the `seeded(seed)` decorator seeds the global module and
-restores the prior state. Phase 4 adds typed draw helpers — `seeded_bytes`,
-`seeded_int`, `seeded_float`, `seeded_choice`, `seeded_choices`,
-`seeded_shuffle`, `seeded_sample` — all reproducible from a single seed.
+restores the prior state on exit, so a decorated function is deterministic in
+isolation without perturbing its caller. The module also exports
+{{SEEDED_HELPER_COUNT}} typed draw helpers ({{SEEDED_HELPERS_CSV}}), each
+reproducible from a single seed and enumerated in the `SEEDED_HELPERS`
+registry that the manuscript reads.
 
 ## Codename schemes (`codenames.py`)
 
@@ -66,6 +68,33 @@ and the derived seed. Phase 4 adds `verify_provenance` (recompute and compare
 the hash/seed/version), `load_records` (sorted directory batch load),
 `record_summary` (flat deterministic digest), and `append_outcome` (merge into
 `outcomes` without disturbing provenance).
+
+## Reporting and figures (`reporting.py`, `figures/plots.py`)
+
+`reporting.py` renders the plain-text surface the thin CLIs print: `banner`,
+`format_table` (left-aligned, width-fitted, ragged rows rejected), `format_kv`
+(right-aligned keys), and `schedule_table`, which projects a sequence of
+`MissionSchedule` objects into name/start/end/status rows evaluated at a caller-
+supplied instant. The `print_*` wrappers take an explicit `stream`; the default
+resolves `sys.stdout` at call time rather than at import time, so redirected
+output is captured correctly and tests can assert on real rendered text without
+a mock framework.
+
+`figures/plots.py` renders the two manuscript figures. `plot_mission_schedule`
+draws the window as a horizontal bar in unix-time coordinates with a dashed
+"now" marker; `plot_frequency_analysis` draws the A-Z counts returned by
+`ciphers.letter_frequency`. Both are deterministic under the Agg backend — the
+same inputs produce byte-identical PNGs, which is asserted directly in
+`tests/test_figures.py`.
+
+## Shared fixtures (`testing.py`)
+
+`testing.py` carries the fixtures every bond package reuses through its own
+`conftest.py`: `seeded_rng` (a `random.Random` at the suite's default seed),
+`mission_record` (a schema-valid record), `temp_dir`, and `seeded_codenames`.
+It imports only `pytest`, the standard library, and this package's pure
+primitives, so importing it can never pull numpy, matplotlib, or — the point of
+the constraint — a mock framework into a consumer's test session.
 
 ## Scoring and statistics
 

@@ -7,6 +7,7 @@ import random
 import pytest
 
 from bond_utilities.randomness import (
+    SEEDED_HELPERS,
     derive_seed,
     make_rng,
     seeded,
@@ -175,3 +176,39 @@ class TestSeededShuffleSample:
             seeded_sample(4, list(range(3)), 5)
         with pytest.raises(ValueError):
             seeded_sample(4, list(range(3)), -1)
+
+
+class TestSeededHelperRegistry:
+    """`SEEDED_HELPERS` must stay bound to the module's real draw helpers.
+
+    A registry that is merely a hand-written tuple can drift silently once a
+    helper is added or renamed; these two directions make drift a test failure.
+    """
+
+    def test_every_registered_name_is_a_real_exported_callable(self) -> None:
+        import bond_utilities.randomness as module
+
+        for name in SEEDED_HELPERS:
+            attribute = getattr(module, name, None)
+            assert callable(attribute), f"SEEDED_HELPERS names a non-callable: {name}"
+            assert name in module.__all__, f"SEEDED_HELPERS names an unexported helper: {name}"
+
+    def test_registry_covers_every_seeded_draw_helper(self) -> None:
+        import inspect
+
+        import bond_utilities.randomness as module
+
+        discovered = {
+            name
+            for name, obj in vars(module).items()
+            if name.startswith("seeded_")
+            and inspect.isfunction(obj)
+            and getattr(obj, "__module__", "") == module.__name__
+        }
+        assert discovered == set(SEEDED_HELPERS)
+
+    def test_registry_order_is_stable(self) -> None:
+        # The manuscript's {{SEEDED_HELPERS_CSV}} token renders this order.
+        assert SEEDED_HELPERS[0] == "seeded_bytes"
+        assert SEEDED_HELPERS[-1] == "seeded_sample"
+        assert len(SEEDED_HELPERS) == len(set(SEEDED_HELPERS))

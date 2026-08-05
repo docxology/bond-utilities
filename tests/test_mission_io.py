@@ -337,3 +337,56 @@ class TestAppendOutcome:
     def test_missing_file_raises(self, tmp_path: Path) -> None:
         with pytest.raises(FileNotFoundError):
             append_outcome(tmp_path / "nope.json", {"x": 1})
+
+    def test_record_without_outcomes_key_starts_empty(self, tmp_path: Path) -> None:
+        """`outcomes` is optional in MISSION_SCHEMA, so appending must not KeyError."""
+        record = _valid_record()
+        del record["outcomes"]
+        target = tmp_path / "no-outcomes.json"
+        save_record(record, target)
+        assert "outcomes" not in json.loads(target.read_text())
+
+        updated = append_outcome(target, {"consumed": True})
+
+        assert updated["outcomes"] == {"consumed": True}
+        assert json.loads(target.read_text())["outcomes"] == {"consumed": True}
+
+    def test_yaml_null_outcomes_is_rejected_before_append(self, tmp_path: Path) -> None:
+        """A YAML record whose `outcomes:` is empty parses as None — schema-invalid.
+
+        This is why `append_outcome` only ever has to handle the *missing* key
+        case: a present-but-non-mapping `outcomes` never survives validation.
+        """
+        target = tmp_path / "null-outcomes.yaml"
+        record = _valid_record()
+        record["outcomes"] = None
+        target.write_text(yaml.safe_dump(record, sort_keys=False))
+
+        with pytest.raises(MissionValidationError, match="outcomes.*mapping"):
+            append_outcome(target, {"consumed": True})
+
+
+class TestModuleSurface:
+    """`__all__` must list the real public surface — a star-import must not lose it."""
+
+    def test_all_lists_every_public_name(self) -> None:
+        import inspect
+
+        import bond_utilities.mission_io as module
+
+        defined = {
+            name
+            for name, obj in vars(module).items()
+            if not name.startswith("_")
+            and (inspect.isfunction(obj) or inspect.isclass(obj))
+            and getattr(obj, "__module__", "") == module.__name__
+        }
+        constants = {"MISSION_SCHEMA", "MISSION_SCHEMA_VERSION", "OPTIONAL_KEYS"}
+        missing = (defined | constants) - set(module.__all__)
+        assert not missing, f"public names absent from __all__: {sorted(missing)}"
+
+    def test_all_names_exist(self) -> None:
+        import bond_utilities.mission_io as module
+
+        for name in module.__all__:
+            assert hasattr(module, name), f"__all__ names a missing attribute: {name}"

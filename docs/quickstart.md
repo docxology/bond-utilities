@@ -16,7 +16,9 @@ uv sync --extra dev
 uv run pytest tests/ --cov=src --cov-fail-under=90
 ```
 
-Expect ≥90% line+branch coverage on `src/` (currently 100%), 0 failures.
+The run prints the measured line+branch coverage of `src/` and fails below the
+`fail_under` floor in `pyproject.toml`. Read the number from the run rather
+than from any document.
 
 ## 3. Generate codenames (any scheme)
 
