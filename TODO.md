@@ -7,8 +7,8 @@ provenance-carrying mission records, plain-text reporting, and shared pytest
 fixtures. Every other bond package imports it; it imports none of them.
 
 **Verified state (measured 2026-08-05, this session, Python 3.14.6):**
-`uv run pytest tests/ --cov=src --cov-fail-under=90` → **384 passed**,
-**100.00%** line+branch coverage over `src/` (816 statements, 270 branches, 0
+`uv run pytest tests/ --cov=src --cov-fail-under=90` → **400 passed**,
+**100.00%** line+branch coverage over `src/` (836 statements, 280 branches, 0
 missed) against the 90% floor in `pyproject.toml:65`. `ruff check`,
 `ruff format --check`, and `mypy src/ scripts/` are all clean. Working tree is
 clean at `git status --short`.
@@ -340,6 +340,7 @@ verified to fail when the thing it guards is broken:
 | Prose gate numbers equal the enforced `fail_under` / Python floor | `tests/test_manuscript_variables.py:388-409` |
 | Registry drift: ciphers, cryptanalysis helpers, codename schemes, seeded helpers | `tests/test_ciphers.py:121`, `tests/test_codenames.py:196`, `tests/test_randomness.py:196` |
 | Byte-determinism for both figures, with a negative control | `tests/test_figures.py:48`, `:62`, `:79` |
+| End-to-end regeneration determinism: the documented command run twice across a real clock tick, whole-tree digest compared (plus the schedule PNG re-derived from the committed instant, with a positive control) | `tests/test_regeneration_determinism.py` |
 | Every documented worked example executed and required verbatim | `tests/test_documented_examples.py` |
 | Provenance mutation rejection | `tests/test_mission_io.py` |
 

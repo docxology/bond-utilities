@@ -25,7 +25,7 @@ never hardcode them.
 | Word-list capacity (unique pairs) | {{WORDLIST_CAPACITY}} |
 | Coverage gate | {{COVERAGE_GATE_PERCENT}}% line + branch on `src/` |
 | Tolerated test failures | {{MAX_TEST_FAILURES}} |
-| Generation timestamp | {{GENERATION_TIMESTAMP}} |
+| Manuscript date (config `paper.date`) | {{CONFIG_MANUSCRIPT_DATE}} |
 
 ## Software environment
 

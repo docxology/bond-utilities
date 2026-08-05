@@ -75,6 +75,7 @@ tests exist specifically to be falsifiable:
 | Registry drift | `test_randomness.py::TestSeededHelperRegistry` | A `seeded_*` helper is added, renamed, or removed without updating `SEEDED_HELPERS` |
 | Provenance mutation | `test_mission_io.py::TestVerifyProvenance` | `verify_provenance` accepts tampered parameters, a wrong seed, or a wrong schema version |
 | Figure determinism (both figures) | `test_figures.py::TestPlotFrequencyAnalysis::test_deterministic_bytes`, `::TestPlotMissionSchedule::test_deterministic_bytes` | Two renders of identical input differ byte-for-byte. The schedule figure is tested at an explicit `now`, with a negative control asserting a different `now` does change the bytes |
+| End-to-end regeneration determinism | `test_regeneration_determinism.py::TestRegenerationIsByteIdentical` | The documented regeneration command, run twice across a real one-second boundary, writes a different `output/` tree. Deliberately *not* a fixed-clock unit test: this package already had one of those, and it stayed green throughout the life of a wall-clock `GENERATION_TIMESTAMP` that was rendered into the manuscript. Ships an emptiness guard so a vanished artifact tree cannot make it vacuous |
 | Flag actually does something | `test_scripts_smoke.py` | `--no-figure` still touches the figure artifacts, or figures leak into the working directory |
 
 ## What each test file covers
@@ -89,6 +90,7 @@ tests exist specifically to be falsifiable:
 | `test_reporting.py` | Table/KV/banner rendering, explicit-stream output, and the call-time stdout default under `redirect_stdout` |
 | `test_testing.py` | The shared fixtures work in a real pytest session |
 | `test_manuscript_variables.py` | Token map, config defaults and error branches, live `{{TOKEN}}` cross-reference, the numeral guard, and gate/enforcement agreement |
+| `test_regeneration_determinism.py` | Two full runs of `scripts/z_generate_manuscript_variables.py`, whole-tree and per-file digests compared, plus a scan for tokens holding today's date |
 | `test_figures.py` | Real PNG output (schedule + frequency), deterministic bytes, default path, error branches |
 | `test_scripts_smoke.py` | Subprocess smoke of every thin CLI, including flag behaviour and artifact anchoring |
 | `test_documented_examples.py` | Every worked example printed in `README.md`, `AGENTS.md` and `docs/quickstart.md`, executed against the live functions and cross-checked against the quoted text; plus the short-text failure cases and the two corrected bibliography claims |
@@ -96,7 +98,9 @@ tests exist specifically to be falsifiable:
 ## Determinism
 
 Every random draw is seeded. Every function with a wall-clock default takes an
-explicit `now=` in tests. `MPLBACKEND=Agg` is pinned in `tests/conftest.py`
+explicit `now=` in tests, and the manuscript pipeline passes one in production
+too — `manuscript_variables.manuscript_instant(config)` — so no persisted
+artifact depends on when it was generated. `MPLBACKEND=Agg` is pinned in `tests/conftest.py`
 before any plotting import, so figures render identically headless. The shared test
 surface hangs off `src/bond_utilities/testing.py`: two pytest fixtures
 (`seeded_rng`, `mission_record`) and two plain helpers imported directly

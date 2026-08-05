@@ -97,8 +97,11 @@ draws the window as a horizontal bar in unix-time coordinates with a dashed
 same inputs produce byte-identical PNGs, which `tests/test_figures.py` asserts
 for each figure by comparing two renders. For the schedule figure the input
 includes `now`: the marker moves with the wall clock when `now` is left to its
-default, so determinism is claimed and tested for a fixed `now`, and a negative
-control asserts that two different `now` values do produce different bytes.
+library default, so determinism is claimed and tested for a fixed `now`, and a
+negative control asserts that two different `now` values do produce different
+bytes. The manuscript pipeline never uses that default — the generator script
+passes `manuscript_variables.manuscript_instant(config)`, a committed value,
+so the rendered PNG is part of the byte-identical regeneration claim.
 
 ## Shared fixtures (`testing.py`)
 

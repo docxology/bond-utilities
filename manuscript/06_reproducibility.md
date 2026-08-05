@@ -15,6 +15,17 @@ command:
 uv run python scripts/z_generate_manuscript_variables.py
 ```
 
+Running that command twice on the same commit rewrites every artifact above
+**byte for byte**. Nothing in the pipeline reads the wall clock: the token map
+is a pure function of `manuscript/config.yaml` and the library registries, and
+the schedule figure's reference marker is pinned to `paper.date` through
+`manuscript_variables.manuscript_instant()` rather than to `datetime.now()`.
+The claim is bound by `tests/test_regeneration_determinism.py`, which runs the
+command above twice — separated by a real clock tick, so a reinstated
+timestamp cannot slip through — and compares a digest of the whole `output/`
+tree. The scope is exactly that artifact tree; nothing here is a claim about
+the wider environment, which the experimental-setup section pins separately.
+
 ## Determinism claims
 
 - Codenames: `generate_codenames(count, seed=S, scheme=...)` returns the same

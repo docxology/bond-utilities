@@ -188,7 +188,9 @@ token cross-reference, a bare-numeral guard (with a positive control), a
 hand-copied-metric guard across every manuscript section, `__all__` completeness
 checks, registry-drift binding for `SEEDED_HELPERS`, `CIPHER_NAMES`,
 `CRYPTANALYSIS_HELPERS` and `CODENAME_SCHEMES`, byte-determinism for both
-figures, provenance mutation tests, and a documented-example check that executes
+figures, end-to-end regeneration determinism (the documented regeneration
+command is run twice across a real clock tick and the whole `output/` tree must
+hash the same), provenance mutation tests, and a documented-example check that executes
 every worked example in this README, `AGENTS.md` and the quickstart and requires
 its quoted output to appear verbatim. Each was verified to go red when the thing
 it guards is broken. See

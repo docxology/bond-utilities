@@ -178,7 +178,9 @@ Falsifiable guards in the suite (details in
 cross-reference, hand-authored-numeral guard with a positive control,
 `__all__` completeness, registry-drift binding for `SEEDED_HELPERS`,
 `CIPHER_NAMES`, `CRYPTANALYSIS_HELPERS` and `CODENAME_SCHEMES`, provenance
-mutation rejection, byte-determinism for *both* figures, documented-example
+mutation rejection, byte-determinism for *both* figures, end-to-end
+regeneration determinism (`scripts/z_generate_manuscript_variables.py` run
+twice across a real clock tick, whole-tree digest compared), documented-example
 verification (every worked example in this file, the README and the quickstart
 is executed and its quoted output is required to appear verbatim), and CLI flag
 behaviour.

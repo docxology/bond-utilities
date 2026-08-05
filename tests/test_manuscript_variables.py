@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -13,12 +13,13 @@ from bond_utilities.manuscript_variables import (
     DEFAULT_MAX_TEST_FAILURES,
     generate_variables,
     load_mission_config,
+    manuscript_instant,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 FULL_CONFIG = {
-    "paper": {"version": "0.2.0", "title": "Q-Branch Field Utility Library"},
+    "paper": {"version": "0.2.0", "title": "Q-Branch Field Utility Library", "date": "2026-08-04"},
     "mission": {
         "codename": "Q-BRANCH",
         "default_seed": 20260804,
@@ -27,8 +28,6 @@ FULL_CONFIG = {
         "overlap_window": {"start": "2026-08-06T12:00:00Z", "end": "2026-08-08T12:00:00Z"},
     },
 }
-
-FIXED_NOW = datetime(2026, 8, 4, 12, 0, 0, tzinfo=timezone.utc)
 
 
 class TestLoadConfig:
@@ -62,8 +61,8 @@ def _load_from(root: Path, cfg: Path) -> dict:
 
 class TestGenerateVariables:
     def test_all_tokens_present_and_deterministic(self) -> None:
-        a = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
-        b = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
+        a = generate_variables(config=FULL_CONFIG)
+        b = generate_variables(config=FULL_CONFIG)
         assert a == b
         expected = {
             "MISSION_CODENAME",
@@ -91,12 +90,12 @@ class TestGenerateVariables:
             "WORDLIST_CAPACITY",
             "COVERAGE_GATE_PERCENT",
             "MAX_TEST_FAILURES",
-            "GENERATION_TIMESTAMP",
+            "CONFIG_MANUSCRIPT_DATE",
         }
         assert set(a.keys()) == expected
 
     def test_values(self) -> None:
-        v = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
+        v = generate_variables(config=FULL_CONFIG)
         assert v["MISSION_CODENAME"] == "Q-BRANCH"
         assert v["PACKAGE_VERSION"] == "0.2.0"
         assert v["CONFIG_DEFAULT_SEED"] == "20260804"
@@ -120,66 +119,121 @@ class TestGenerateVariables:
         assert v["ALLITERATIVE_CAPACITY"] == "9"
         # The configured sample repeats: fewer distinct names than slots.
         assert int(v["RESULT_SCHEME_DISTINCT"]) < int(v["CONFIG_NUM_CODENAMES"])
-        assert v["GENERATION_TIMESTAMP"] == "2026-08-04T12:00:00+00:00"
+        assert v["CONFIG_MANUSCRIPT_DATE"] == "2026-08-04"
         assert v["CONFIG_SCHEDULE_START"] == "2026-08-04T00:00:00+00:00"
         assert v["CONFIG_SCHEDULE_END"] == "2026-08-10T00:00:00+00:00"
 
     def test_quality_gate_tokens_default_when_testing_section_absent(self) -> None:
-        v = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
+        v = generate_variables(config=FULL_CONFIG)
         assert v["COVERAGE_GATE_PERCENT"] == str(DEFAULT_COVERAGE_GATE_PERCENT)
         assert v["MAX_TEST_FAILURES"] == str(DEFAULT_MAX_TEST_FAILURES)
 
     def test_quality_gate_tokens_read_the_testing_section(self) -> None:
         config = dict(FULL_CONFIG)
         config["testing"] = {"coverage_gate_percent": 95, "max_test_failures": 2}
-        v = generate_variables(config=config, now=FIXED_NOW)
+        v = generate_variables(config=config)
         assert v["COVERAGE_GATE_PERCENT"] == "95"
         assert v["MAX_TEST_FAILURES"] == "2"
 
     def test_non_mapping_testing_section_falls_back_to_defaults(self) -> None:
         config = dict(FULL_CONFIG)
         config["testing"] = "not-a-mapping"
-        v = generate_variables(config=config, now=FIXED_NOW)
+        v = generate_variables(config=config)
         assert v["COVERAGE_GATE_PERCENT"] == str(DEFAULT_COVERAGE_GATE_PERCENT)
 
-    def test_now_none_uses_wall_clock(self) -> None:
-        from datetime import datetime as dt
+    def test_no_token_tracks_the_wall_clock(self) -> None:
+        """Two maps built either side of a real second boundary must be equal.
 
-        before = dt.now(timezone.utc).isoformat(timespec="seconds")
-        v = generate_variables(config=FULL_CONFIG, now=None)
-        after = dt.now(timezone.utc).isoformat(timespec="seconds")
-        stamp = v["GENERATION_TIMESTAMP"]
-        assert before <= stamp <= after
+        This is the unit-level half of the byte-identical regeneration claim;
+        ``tests/test_regeneration_determinism.py`` binds the persisted files.
+        The sleep is load-bearing: the removed ``GENERATION_TIMESTAMP`` had
+        one-second resolution, so a shorter gap would let a reintroduced clock
+        pass unnoticed and the assertion would be green by construction.
+        """
+        import time
+
+        first = generate_variables(config=FULL_CONFIG)
+        time.sleep(1.05)
+        second = generate_variables(config=FULL_CONFIG)
+        assert first == second
+
+    def test_generate_variables_exposes_no_clock_parameter(self) -> None:
+        """A ``now=`` parameter would mean a wall-clock default is back."""
+        import inspect
+
+        assert set(inspect.signature(generate_variables).parameters) == {"config", "project_root"}
+
+
+class TestManuscriptInstant:
+    """The reference instant must come from committed config, never a clock."""
+
+    def test_iso_string_date_becomes_utc_midnight(self) -> None:
+        assert manuscript_instant(FULL_CONFIG) == datetime(2026, 8, 4, tzinfo=timezone.utc)
+
+    def test_yaml_date_object_is_accepted(self) -> None:
+        config = {"paper": {"date": date(2026, 1, 2)}, "mission": FULL_CONFIG["mission"]}
+        assert manuscript_instant(config) == datetime(2026, 1, 2, tzinfo=timezone.utc)
+
+    def test_naive_datetime_is_read_as_utc(self) -> None:
+        config = {"paper": {"date": datetime(2026, 1, 2, 3, 4)}, "mission": FULL_CONFIG["mission"]}
+        assert manuscript_instant(config) == datetime(2026, 1, 2, 3, 4, tzinfo=timezone.utc)
+
+    def test_aware_datetime_is_preserved(self) -> None:
+        aware = datetime(2026, 1, 2, 3, 4, tzinfo=timezone.utc)
+        config = {"paper": {"date": aware}, "mission": FULL_CONFIG["mission"]}
+        assert manuscript_instant(config) == aware
+
+    def test_absent_date_falls_back_to_schedule_start(self) -> None:
+        config = {"paper": {}, "mission": FULL_CONFIG["mission"]}
+        assert manuscript_instant(config) == datetime(2026, 8, 4, tzinfo=timezone.utc)
+
+    def test_absent_date_and_no_schedule_raises(self) -> None:
+        with pytest.raises(ValueError, match="reference instant"):
+            manuscript_instant({"paper": {}, "mission": {}})
+
+    def test_malformed_date_raises_rather_than_falling_back(self) -> None:
+        config = {"paper": {"date": "the fourth of August"}, "mission": FULL_CONFIG["mission"]}
+        with pytest.raises(ValueError, match="not an ISO-8601 date"):
+            manuscript_instant(config)
+
+    def test_non_date_type_raises(self) -> None:
+        config = {"paper": {"date": 20260804}, "mission": FULL_CONFIG["mission"]}
+        with pytest.raises(ValueError, match="ISO-8601 date string"):
+            manuscript_instant(config)
+
+    def test_real_project_config_pins_a_committed_instant(self) -> None:
+        config = load_mission_config(PROJECT_ROOT)
+        assert manuscript_instant(config).date().isoformat() == str(config["paper"]["date"])
 
     def test_codename_sample_matches_direct_call(self) -> None:
         from bond_utilities.codenames import generate_codenames
 
-        v = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
+        v = generate_variables(config=FULL_CONFIG)
         direct = generate_codenames(6, seed=20260804)
         assert v["RESULT_CODENAME_SAMPLE"] == ", ".join(direct)
 
     def test_loads_from_project_root_when_no_config(self) -> None:
         # Uses the real manuscript/config.yaml via the default project_root.
-        v = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        v = generate_variables(project_root=PROJECT_ROOT)
         assert v["MISSION_CODENAME"] == "Q-BRANCH"
 
     def test_missing_mission_section_raises(self) -> None:
         with pytest.raises(ValueError, match="mission"):
-            generate_variables(config={"paper": {}}, now=FIXED_NOW)
+            generate_variables(config={"paper": {}})
 
     def test_missing_paper_section_raises(self) -> None:
         with pytest.raises(ValueError, match="paper"):
-            generate_variables(config={"mission": FULL_CONFIG["mission"]}, now=FIXED_NOW)
+            generate_variables(config={"mission": FULL_CONFIG["mission"]})
 
     def test_bad_schedule_raises(self) -> None:
         bad = {"paper": {"version": "0.1.0"}, "mission": {"schedule": {}}}
         with pytest.raises(ValueError, match="missing required key 'start'"):
-            generate_variables(config=bad, now=FIXED_NOW)
+            generate_variables(config=bad)
 
     def test_non_mapping_schedule_raises(self) -> None:
         cfg = {"paper": {}, "mission": {"schedule": "not-a-mapping"}}
         with pytest.raises(ValueError, match="mappings"):
-            generate_variables(config=cfg, now=FIXED_NOW)
+            generate_variables(config=cfg)
 
     def test_non_mapping_overlap_window_raises(self) -> None:
         cfg = {
@@ -190,14 +244,14 @@ class TestGenerateVariables:
             },
         }
         with pytest.raises(ValueError, match="mappings"):
-            generate_variables(config=cfg, now=FIXED_NOW)
+            generate_variables(config=cfg)
 
     def test_defaults_when_values_absent(self) -> None:
         minimal = {
             "paper": {},
             "mission": {"schedule": {"start": "2026-08-04T00:00:00Z", "end": "2026-08-05T00:00:00Z"}},
         }
-        v = generate_variables(config=minimal, now=FIXED_NOW)
+        v = generate_variables(config=minimal)
         assert v["MISSION_CODENAME"] == "Q-BRANCH"
         assert v["CONFIG_DEFAULT_SEED"] == "0"
         assert v["CONFIG_NUM_CODENAMES"] == "3"
@@ -208,7 +262,7 @@ class TestManuscriptCrossReference:
     def test_all_prose_tokens_are_generated(self) -> None:
         import re
 
-        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        variables = generate_variables(project_root=PROJECT_ROOT)
         used: set[str] = set()
         # Scan only the numbered manuscript prose sections (00..07, 99), not the
         # guide files (AGENTS.md / SYNTAX.md) that legitimately mention the
@@ -354,7 +408,7 @@ class TestGeneratedMetricsAreNotHandCopied:
 
     def test_metric_tokens_all_exist(self) -> None:
         """Guard against the guard going vacuous through a renamed token."""
-        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        variables = generate_variables(project_root=PROJECT_ROOT)
         missing = set(METRIC_TOKENS) - set(variables)
         assert not missing, f"METRIC_TOKENS names tokens the generator no longer produces: {missing}"
         assert METRIC_TOKENS, "no metrics to check — the guard would be vacuous"
@@ -374,7 +428,7 @@ class TestGeneratedMetricsAreNotHandCopied:
     def test_no_section_hand_copies_a_generated_metric(self) -> None:
         import re
 
-        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        variables = generate_variables(project_root=PROJECT_ROOT)
         offenders: list[str] = []
         for section in _metric_scanned_sections():
             prose = self._prose(section)
@@ -396,7 +450,7 @@ class TestGateNumbersAgreeWithEnforcement:
 
         match = re.search(r"^fail_under\s*=\s*(\d+)", self._pyproject(), flags=re.MULTILINE)
         assert match, "pyproject.toml has no [tool.coverage.report] fail_under"
-        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        variables = generate_variables(project_root=PROJECT_ROOT)
         assert variables["COVERAGE_GATE_PERCENT"] == match.group(1)
 
     def test_setup_section_python_floor_matches_pyproject(self) -> None:
@@ -421,7 +475,7 @@ class TestVersionConsistency:
         assert declared, "pyproject.toml has no [project] version"
 
         config_version = load_mission_config(PROJECT_ROOT)["paper"]["version"]
-        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        variables = generate_variables(project_root=PROJECT_ROOT)
 
         assert bond_utilities.__version__ == declared.group(1)
         assert config_version == declared.group(1)
@@ -467,7 +521,7 @@ class TestClaimLedgerMatchesTheCode:
 
     def test_numeric_claims_equal_the_generated_tokens(self) -> None:
         ledger = self._ledger()
-        variables = generate_variables(project_root=PROJECT_ROOT, now=FIXED_NOW)
+        variables = generate_variables(project_root=PROJECT_ROOT)
         mismatches: list[str] = []
         for claim_id, token in LEDGER_CLAIM_TOKENS.items():
             recorded = str(ledger[claim_id]["value"])

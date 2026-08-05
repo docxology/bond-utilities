@@ -3,11 +3,17 @@
 Tokens are computed, never hand-authored in prose: every value either comes
 straight from the mission config or is derived deterministically from it by
 the library modules (clock window math, codename sampling, cipher registry).
+
+No token reads the wall clock. Every persisted artifact is a function of
+committed inputs only, which is what makes regeneration byte-identical --
+``tests/test_regeneration_determinism.py`` runs the documented regeneration
+command twice, across a real second boundary, and requires the whole
+``output/`` tree to hash the same both times.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -56,19 +62,65 @@ def load_mission_config(project_root: str | Path | None = None) -> dict[str, Any
     return config
 
 
+def manuscript_instant(config: dict[str, Any]) -> datetime:
+    """Return the committed reference instant for a manuscript render.
+
+    This is the package's single source of "when", and it is deliberately
+    **not** the wall clock: it is ``paper.date`` from ``config.yaml`` taken at
+    midnight UTC, falling back to the mission schedule start when the config
+    omits a paper date. Both are committed values, so two renders of the same
+    commit pin the same instant and produce identical bytes.
+
+    A ``paper.date`` that is present but unparseable raises rather than
+    silently falling back — a malformed date must not degrade into a
+    different, still-green answer.
+
+    Args:
+        config: Parsed ``manuscript/config.yaml`` mapping.
+
+    Returns:
+        The reference instant, timezone-aware in UTC.
+
+    Raises:
+        ValueError: If ``paper.date`` is present but is not an ISO-8601 date,
+            or is absent with no usable ``mission.schedule`` to fall back to.
+    """
+    paper = config.get("paper")
+    raw = paper.get("date") if isinstance(paper, dict) else None
+    if raw is None:
+        mission = config.get("mission")
+        schedule = mission.get("schedule") if isinstance(mission, dict) else None
+        if not isinstance(schedule, dict):
+            raise ValueError("config.yaml needs paper.date or mission.schedule to fix the reference instant")
+        return parse_schedule(schedule)[0]
+    if isinstance(raw, datetime):
+        return raw if raw.tzinfo is not None else raw.replace(tzinfo=timezone.utc)
+    if isinstance(raw, date):
+        return datetime(raw.year, raw.month, raw.day, tzinfo=timezone.utc)
+    if not isinstance(raw, str):
+        raise ValueError("config.yaml paper.date must be an ISO-8601 date string")
+    try:
+        parsed = date.fromisoformat(raw)
+    except ValueError as exc:
+        raise ValueError(f"config.yaml paper.date is not an ISO-8601 date: {raw!r}") from exc
+    return datetime(parsed.year, parsed.month, parsed.day, tzinfo=timezone.utc)
+
+
 def generate_variables(
     config: dict[str, Any] | None = None,
     project_root: str | Path | None = None,
-    now: datetime | None = None,
 ) -> dict[str, str]:
     """Compute the full ``{{TOKEN}} -> value`` map for the manuscript.
+
+    Every value is a pure function of the config and the library registries.
+    There is no clock override parameter because no token reads a clock: the
+    dated token, ``CONFIG_MANUSCRIPT_DATE``, comes from
+    :func:`manuscript_instant`.
 
     Args:
         config: Pre-loaded config mapping (avoids re-reading the file in
             tests); defaults to :func:`load_mission_config`.
         project_root: Root used to locate ``manuscript/config.yaml``.
-        now: Clock override for ``GENERATION_TIMESTAMP`` (tests pass a fixed
-            value so the map is fully deterministic).
 
     Returns:
         Mapping of token name to rendered string value.
@@ -102,7 +154,7 @@ def generate_variables(
     # initial, and it seeds each index independently, so samples may repeat.
     shared_initials = {adj[0] for adj in ADJECTIVES} & {noun[0] for noun in NOUNS}
     alliterative_pairs = {(adj, noun) for adj in ADJECTIVES for noun in NOUNS if adj[0] == noun[0]}
-    stamp = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
+    manuscript_date = manuscript_instant(loaded).date().isoformat()
 
     testing = loaded.get("testing")
     if not isinstance(testing, dict):
@@ -136,7 +188,7 @@ def generate_variables(
         "WORDLIST_CAPACITY": str(len(ADJECTIVES) * len(NOUNS)),
         "COVERAGE_GATE_PERCENT": str(coverage_gate),
         "MAX_TEST_FAILURES": str(max_failures),
-        "GENERATION_TIMESTAMP": stamp,
+        "CONFIG_MANUSCRIPT_DATE": manuscript_date,
     }
 
 
@@ -145,5 +197,6 @@ __all__ = [
     "DEFAULT_COVERAGE_GATE_PERCENT",
     "DEFAULT_MAX_TEST_FAILURES",
     "load_mission_config",
+    "manuscript_instant",
     "generate_variables",
 ]

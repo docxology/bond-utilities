@@ -35,7 +35,7 @@ Known tokens (generated from `manuscript/config.yaml`):
 | `WORDLIST_CAPACITY` | `len(ADJECTIVES) * len(NOUNS)` unique pairs |
 | `COVERAGE_GATE_PERCENT` | `testing.coverage_gate_percent` (asserted equal to `pyproject.toml` `fail_under`) |
 | `MAX_TEST_FAILURES` | `testing.max_test_failures` |
-| `GENERATION_TIMESTAMP` | run timestamp (UTC) |
+| `CONFIG_MANUSCRIPT_DATE` | `paper.date` from the config, via `manuscript_instant()` — a committed value, never the wall clock |
 
 ## The numeral guard
 

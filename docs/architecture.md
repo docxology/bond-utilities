@@ -208,10 +208,13 @@ coordinates with a dashed "now" marker; `plot_frequency_analysis` draws the A-Z
 counts from `ciphers.letter_frequency`. Both are byte-deterministic under the
 Agg backend (pinned in `tests/conftest.py`) for a fixed input, and
 `tests/test_figures.py` asserts that for *each* figure by comparing two renders.
-For `plot_mission_schedule` the input includes `now`: left at its default the
-marker tracks the wall clock, so the determinism claim is scoped to an explicit
-`now`, and a negative control asserts two different `now` values do change the
-bytes.
+For `plot_mission_schedule` the input includes `now`: left at its library
+default the marker tracks the wall clock, so the determinism claim is scoped to
+an explicit `now`, and a negative control asserts two different `now` values do
+change the bytes. The manuscript pipeline never leaves it at the default —
+`scripts/z_generate_manuscript_variables.py` passes
+`manuscript_variables.manuscript_instant(config)`, so the persisted PNG is a
+function of committed inputs only.
 
 ### `testing.py` — shared fixtures
 

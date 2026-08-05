@@ -8,6 +8,11 @@ and renders two deterministic figures referenced by the manuscript:
 - ``output/figures/mission_schedule.png`` — the mission schedule window;
 - ``output/figures/letter_frequency.png`` — letter counts of the codename sample.
 
+Nothing written here reads the wall clock. The schedule figure's reference
+marker is pinned to ``manuscript_variables.manuscript_instant(config)`` (a
+committed config value), so two runs of this command on the same commit write
+byte-identical artifacts.
+
 ``z_`` prefix keeps this last in alphabetical orchestration order.
 """
 
@@ -25,6 +30,7 @@ from bond_utilities.figures import plot_frequency_analysis, plot_mission_schedul
 from bond_utilities.manuscript_variables import (  # noqa: E402
     generate_variables,
     load_mission_config,
+    manuscript_instant,
 )
 
 
@@ -48,7 +54,11 @@ def main() -> int:
         figure_dir = project_root / "output" / "figures"
         config = load_mission_config(project_root)
         start, end = parse_schedule(config["mission"]["schedule"])
-        rendered.append(plot_mission_schedule(start, end, path=figure_dir / "mission_schedule.png"))
+        # The marker instant comes from the config, never from `datetime.now()`:
+        # left at the library default it would move the dashed line between runs
+        # and break the byte-identical regeneration claim.
+        reference = manuscript_instant(config)
+        rendered.append(plot_mission_schedule(start, end, now=reference, path=figure_dir / "mission_schedule.png"))
         sample_text = " ".join(variables["RESULT_CODENAME_SAMPLE"].split(", "))
         rendered.append(plot_frequency_analysis(sample_text, path=figure_dir / "letter_frequency.png"))
 

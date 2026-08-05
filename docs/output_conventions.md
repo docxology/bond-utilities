@@ -7,6 +7,11 @@ git-ignored. Regenerate everything with:
 uv run python scripts/z_generate_manuscript_variables.py
 ```
 
+Two runs of that command on the same commit write the tree byte for byte the
+same: nothing in the pipeline reads the wall clock. `tests/test_regeneration_determinism.py`
+runs the command twice across a real clock tick and compares a digest of every
+file below.
+
 ## Layout
 
 | Path | Producer | Consumer |
