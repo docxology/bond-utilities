@@ -9,15 +9,15 @@ suite. Every other bond package imports from it.
 
 | Module | Responsibility | Purity |
 | --- | --- | --- |
-| `ciphers.py` | Caesar, Vigenère, one-time-pad, XOR; codename encoding | pure |
-| `codenames.py` | Deterministic adjective–noun codename generator | pure |
-| `clock.py` | Elapsed time, schedule windows, T-minus countdowns | pure |
-| `randomness.py` | `derive_seed`, `make_rng`, `seeded()` | pure (restores global state) |
-| `mission_io.py` | JSON/YAML record persistence, schema, provenance | file I/O |
-| `reporting.py` | Plain-text table/KV output | writes to an explicit stream |
+| `ciphers.py` | 9 classical ciphers + 8 cryptanalysis helpers; codename encoding | pure |
+| `codenames.py` | 5 deterministic codename schemes (adjective–noun, alliterative, NATO, numeric, token) | pure |
+| `clock.py` | Elapsed time, schedule windows, overlap/merge, duration, T-minus; `MissionSchedule` | pure |
+| `randomness.py` | `derive_seed`, `make_rng`, `seeded()`, seeded scalar/sequence draws | pure (restores global state) |
+| `mission_io.py` | JSON/YAML persistence, schema, provenance verify/append/summary | file I/O |
+| `reporting.py` | Table/KV/banner/schedule-table output | writes to an explicit stream |
 | `testing.py` | Shared pytest fixtures/helpers | import-light, no mocks |
 | `manuscript_variables.py` | `{{TOKEN}}` map from `manuscript/config.yaml` | reads config |
-| `figures/plots.py` | Minimal schedule figure | writes PNG |
+| `figures/plots.py` | Schedule + letter-frequency figures | writes PNG |
 
 ## Rules
 

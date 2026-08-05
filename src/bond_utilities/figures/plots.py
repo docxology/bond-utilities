@@ -11,10 +11,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from ..ciphers import letter_frequency
 from ..clock import to_utc
 
-#: Default figure output path, relative to the current working directory.
+#: Default figure output paths, relative to the current working directory.
 DEFAULT_FIGURE_PATH = Path("output") / "figures" / "mission_schedule.png"
+DEFAULT_FREQUENCY_PATH = Path("output") / "figures" / "letter_frequency.png"
 
 
 def plot_mission_schedule(
@@ -87,4 +89,34 @@ def plot_mission_schedule(
     return target.resolve()
 
 
-__all__ = ["DEFAULT_FIGURE_PATH", "plot_mission_schedule"]
+def plot_frequency_analysis(text: str, path: str | Path | None = None) -> Path:
+    """Render a letter-frequency bar chart for ``text`` and return the PNG path.
+
+    The chart is fully deterministic — the same ``text`` always produces the
+    same bytes (with the Agg backend).
+
+    Args:
+        text: Text whose A-Z letter counts are plotted.
+        path: Output path; defaults to ``output/figures/letter_frequency.png``
+            relative to the working directory.
+
+    Returns:
+        The absolute path of the written PNG.
+    """
+    counts = letter_frequency(text)
+    target = Path(path) if path is not None else DEFAULT_FREQUENCY_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    figure, axis = plt.subplots(figsize=(8.0, 3.0))
+    letters = list(counts.keys())
+    values = [counts[letter] for letter in letters]
+    axis.bar(letters, values, color="#1e3a8a")
+    axis.set_title("Letter frequency")
+    axis.set_xlabel("letter")
+    axis.set_ylabel("count")
+    figure.savefig(target, dpi=150, bbox_inches="tight")
+    plt.close(figure)
+    return target.resolve()
+
+
+__all__ = ["DEFAULT_FIGURE_PATH", "DEFAULT_FREQUENCY_PATH", "plot_mission_schedule", "plot_frequency_analysis"]

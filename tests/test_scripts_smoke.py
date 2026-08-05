@@ -32,6 +32,16 @@ class TestGenerateCodenames:
         proc = _run("generate_codenames.py", "--count", "0")
         assert proc.returncode != 0
 
+    def test_scheme_flag(self) -> None:
+        proc = _run("generate_codenames.py", "--count", "2", "--seed", "7", "--scheme", "numeric")
+        assert proc.returncode == 0, proc.stderr
+        assert "numeric" in proc.stdout
+        assert "QB-" in proc.stdout
+
+    def test_bad_scheme_exits_nonzero(self) -> None:
+        proc = _run("generate_codenames.py", "--count", "2", "--scheme", "bogus")
+        assert proc.returncode != 0
+
 
 class TestRecordMission:
     def test_writes_json_file(self, tmp_path: Path) -> None:
@@ -68,19 +78,58 @@ class TestRecordMission:
         assert out.exists()
         assert b"mission_id: M-901" in out.read_bytes()
 
+    def test_verify_flag(self, tmp_path: Path) -> None:
+        out = tmp_path / "m-verify.json"
+        proc = _run(
+            "record_mission.py",
+            "--mission-id",
+            "M-902",
+            "--payload",
+            '{"n": 1}',
+            "--verify",
+            "--out",
+            str(out),
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "provenance_verified" in proc.stdout
+        assert "true" in proc.stdout
+
+
+class TestCryptanalyze:
+    def test_exit_zero_and_output(self) -> None:
+        proc = _run("cryptanalyze.py", "THEQUICKBROWNFOX")
+        assert proc.returncode == 0, proc.stderr
+        assert "index_of_coincidence" in proc.stdout
+        assert "caesar_shift" in proc.stdout
+        assert "letter" in proc.stdout
+
+    def test_default_text(self) -> None:
+        proc = _run("cryptanalyze.py")
+        assert proc.returncode == 0, proc.stderr
+        assert "QBRANCH" in proc.stdout
+
+    def test_vigenere_length_flag(self) -> None:
+        proc = _run("cryptanalyze.py", "--vigenere-length", "5", "SOMEVIGENERECIPHERTEXT")
+        assert proc.returncode == 0, proc.stderr
+        assert "vigenere_key" in proc.stdout
+
 
 class TestZGenerateManuscriptVariables:
-    def test_writes_variables_and_figure(self, tmp_path: Path) -> None:
+    def test_writes_variables_and_figures(self, tmp_path: Path) -> None:
         # Run from a COPY of the tree? No: the script resolves its own root.
         proc = _run("z_generate_manuscript_variables.py")
         assert proc.returncode == 0, proc.stderr
         data = PROJECT_ROOT / "output" / "data" / "manuscript_variables.json"
         fig = PROJECT_ROOT / "output" / "figures" / "mission_schedule.png"
+        freq = PROJECT_ROOT / "output" / "figures" / "letter_frequency.png"
         assert data.exists()
         assert fig.exists()
+        assert freq.exists()
         variables = json.loads(data.read_text())
         assert variables["MISSION_CODENAME"] == "Q-BRANCH"
+        assert variables["CIPHER_COUNT"] == "9"
         assert fig.stat().st_size > 0
+        assert freq.stat().st_size > 0
 
     def test_no_figure_flag(self) -> None:
         proc = _run("z_generate_manuscript_variables.py", "--no-figure")

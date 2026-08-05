@@ -31,6 +31,7 @@ operational rulebook for agents working inside the bond-utilities package.
 ```bash
 uv run pytest tests/ --cov=src --cov-fail-under=90
 uv run ruff check src/ scripts/
+uv run ruff format --check src/ scripts/
 uv run mypy src/ scripts/
 rg -n "unittest\.mock|MagicMock|@patch|create_autospec" tests/ || echo clean
 ```

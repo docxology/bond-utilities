@@ -3,10 +3,20 @@
 from __future__ import annotations
 
 import io
+from datetime import datetime, timezone
 
 import pytest
 
-from bond_utilities.reporting import banner, format_kv, format_table, print_kv, print_table
+from bond_utilities.clock import MissionSchedule
+from bond_utilities.reporting import (
+    banner,
+    format_kv,
+    format_table,
+    print_kv,
+    print_schedule_table,
+    print_table,
+    schedule_table,
+)
 
 
 class TestBanner:
@@ -36,9 +46,9 @@ class TestFormatTable:
     def test_with_headers(self) -> None:
         text = format_table([["a", "bb"], ["cc", "d"]], headers=["h1", "h2"])
         lines = text.split("\n")
-        assert lines[0] == "h1  h2"        # header row
-        assert lines[1] == "--  --"        # dash separator
-        assert len(lines) == 4             # header, dashes, two data rows
+        assert lines[0] == "h1  h2"  # header row
+        assert lines[1] == "--  --"  # dash separator
+        assert len(lines) == 4  # header, dashes, two data rows
         assert "a   bb" in lines[2]
 
     def test_without_headers(self) -> None:
@@ -84,3 +94,36 @@ class TestPrintHelpers:
         stream = io.StringIO()
         print_kv([("path", "/tmp/x.json")], stream=stream)
         assert "/tmp/x.json" in stream.getvalue()
+
+
+class TestScheduleTable:
+    def _windows(self) -> list[MissionSchedule]:
+        utc = timezone.utc
+        return [
+            MissionSchedule("grid", datetime(2026, 8, 4, 0, tzinfo=utc), datetime(2026, 8, 6, 0, tzinfo=utc)),
+            MissionSchedule("recon", datetime(2026, 8, 2, 0, tzinfo=utc), datetime(2026, 8, 3, 0, tzinfo=utc)),
+        ]
+
+    def test_renders_rows_and_status(self) -> None:
+        now = datetime(2026, 8, 5, 0, tzinfo=timezone.utc)
+        text = schedule_table(self._windows(), now=now)
+        assert "grid" in text
+        assert "recon" in text
+        assert "ACTIVE" in text
+        assert "COMPLETE" in text
+        assert "PENDING" not in text
+
+    def test_custom_headers(self) -> None:
+        text = schedule_table(
+            self._windows(), now=datetime(2026, 8, 5, tzinfo=timezone.utc), headers=["n", "s", "e", "st"]
+        )
+        assert "st" in text
+
+    def test_non_schedule_raises(self) -> None:
+        with pytest.raises(ValueError, match="MissionSchedule"):
+            schedule_table(["not-a-schedule"])  # type: ignore[list-item]
+
+    def test_print_to_stream(self) -> None:
+        stream = io.StringIO()
+        print_schedule_table(self._windows(), now=datetime(2026, 8, 5, tzinfo=timezone.utc), stream=stream)
+        assert "grid" in stream.getvalue()

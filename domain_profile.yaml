@@ -14,8 +14,9 @@ validation_gates:
   - zero_mock_audit
 figure_types:
   - mission_schedule
+  - letter_frequency
 citation_policy: official_or_scholarly
-source_policy: "Prefer primary project outputs and scholarly references (Shannon, Kahn, ISO 8601)."
+source_policy: "Prefer primary project outputs and scholarly references (Shannon, Kahn, Friedman, Kasiski, ISO 8601)."
 review_gates:
   - zero_mock_audit
   - evidence_grounding

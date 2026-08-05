@@ -26,6 +26,7 @@ prose token is not generated.
 
 ## Figure protocol
 
-Reference the schedule figure via `[@fig:schedule]` (Pandoc-crossref); never
-use `\ref{}` or a hardcoded number. The PNG is generated from the mission
-schedule by `scripts/z_generate_manuscript_variables.py`.
+Reference figures via `[@fig:schedule]` and `[@fig:freq]` (Pandoc-crossref);
+never use `\ref{}` or a hardcoded number. The PNGs are generated from the
+mission schedule and codename sample by
+`scripts/z_generate_manuscript_variables.py`.

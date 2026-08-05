@@ -5,7 +5,7 @@
 paper:
   title: "Q-Branch Field Utility Library"
   subtitle: "Cipher, Codename, Clock, Randomness, and Provenance Primitives for Mission Operations"
-  version: "0.1.0"
+  version: "0.2.0"
   date: "2026-08-04"
 
 authors:
@@ -36,6 +36,11 @@ mission:
   schedule:
     start: "2026-08-04T00:00:00Z"
     end: "2026-08-10T00:00:00Z"
+  # A secondary window inside the primary schedule; the manuscript's
+  # {{RESULT_OVERLAP_HOURS}} token is the overlap of these two windows.
+  overlap_window:
+    start: "2026-08-06T12:00:00Z"
+    end: "2026-08-08T12:00:00Z"
 
 testing:
   max_test_failures: 0

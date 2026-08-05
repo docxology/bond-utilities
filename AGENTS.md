@@ -6,7 +6,7 @@ ciphers, deterministic codenames, mission clock math, seeded randomness,
 mission-record persistence with provenance, plain-text reporting, and shared
 test fixtures.
 
-**Codename:** Q-BRANCH · **Version:** 0.1.0 · **License:** MIT
+**Codename:** Q-BRANCH · **Version:** 0.2.0 · **License:** MIT
 
 This is a **LOCAL-ONLY working tree** — there is no remote and nothing is
 ever pushed.
@@ -29,15 +29,15 @@ matplotlib + pyyaml`, `tests/ → src/`. See
 
 | Module | Responsibility |
 | --- | --- |
-| [`src/bond_utilities/ciphers.py`](src/bond_utilities/ciphers.py) | Caesar, Vigenère, one-time-pad, XOR; codename encoding helpers |
-| [`src/bond_utilities/codenames.py`](src/bond_utilities/codenames.py) | Deterministic adjective–noun codename generator |
-| [`src/bond_utilities/clock.py`](src/bond_utilities/clock.py) | Elapsed time, schedule windows, T-minus countdowns |
-| [`src/bond_utilities/randomness.py`](src/bond_utilities/randomness.py) | Seeded RNG factory and `seeded(seed)` helper |
-| [`src/bond_utilities/mission_io.py`](src/bond_utilities/mission_io.py) | JSON/YAML mission records, schema validation, provenance persistence |
-| [`src/bond_utilities/reporting.py`](src/bond_utilities/reporting.py) | Plain-text table/KV output for thin CLIs |
+| [`src/bond_utilities/ciphers.py`](src/bond_utilities/ciphers.py) | 9 classical ciphers (Caesar, Vigenère, OTP, XOR, Atbash, Beaufort, rail-fence, Playfair, columnar) + 8 cryptanalysis helpers; codename encoding |
+| [`src/bond_utilities/codenames.py`](src/bond_utilities/codenames.py) | 5 deterministic codename schemes (adjective–noun, alliterative, NATO, numeric, token) |
+| [`src/bond_utilities/clock.py`](src/bond_utilities/clock.py) | Elapsed time, schedule windows, overlap/merge, duration, T-minus; `MissionSchedule` |
+| [`src/bond_utilities/randomness.py`](src/bond_utilities/randomness.py) | Seeded RNG factory, `seeded` helper, seeded scalar/sequence draws |
+| [`src/bond_utilities/mission_io.py`](src/bond_utilities/mission_io.py) | JSON/YAML records, schema validation, provenance persistence + verify/append/summary |
+| [`src/bond_utilities/reporting.py`](src/bond_utilities/reporting.py) | Plain-text table/KV/banner/schedule-table output for thin CLIs |
 | [`src/bond_utilities/testing.py`](src/bond_utilities/testing.py) | Shared pytest fixtures/helpers |
 | [`src/bond_utilities/manuscript_variables.py`](src/bond_utilities/manuscript_variables.py) | `{{TOKEN}}` map from `manuscript/config.yaml` |
-| [`src/bond_utilities/figures/plots.py`](src/bond_utilities/figures/plots.py) | Minimal schedule figure |
+| [`src/bond_utilities/figures/plots.py`](src/bond_utilities/figures/plots.py) | Schedule + letter-frequency figures |
 
 ## Installation
 
@@ -60,14 +60,30 @@ key = b"\x2a\x1b\x4c"
 assert xor_bytes(xor_bytes(payload, key), key) == payload
 ```
 
+### Cryptanalysis
+
+```python
+from bond_utilities import caesar_break, vigenere_encrypt, vigenere_break
+from bond_utilities.ciphers import kasiski_key_lengths, index_of_coincidence
+
+ciphertext = caesar_encrypt("THEQUICKBROWNFOXJUMPS", 7)
+shift, plaintext = caesar_break(ciphertext)     # (7, 'THEQUICKBROWNFOXJUMPS')
+
+vig = vigenere_encrypt("THEQUICKBROWNFOXJUMPS", "LEMON")
+key, decoded = vigenere_break(vig, 5)           # recover the keyword + plaintext
+print(kasiski_key_lengths(vig), index_of_coincidence(vig))
+```
+
 ### Codenames (deterministic)
 
 ```python
-from bond_utilities import generate_codenames, codename_for
+from bond_utilities import generate_codenames, codename_for, nato_codename
 
 names = generate_codenames(6, seed=20260804)
 # Same seed -> same list, every run.
 stable = codename_for("HQ-07", seed="ops")
+alliterative = generate_codenames(6, seed=20260804, scheme="alliterative")
+print(nato_codename("QB7"))  # 'QUEBEC-BRAVO-7'
 ```
 
 ### Clock / scheduling
@@ -128,14 +144,15 @@ uv run ruff format --check src/ scripts/
 uv run mypy src/ scripts/
 ```
 
-Current gate: **100%** line+branch coverage on `src/`, 0 skipped, 0 failed,
-zero mocks.
+Current gate: **100%** line+branch coverage on `src/` (316 tests), 0 skipped,
+0 failed, zero mocks.
 
 ## Scripts
 
-- [`scripts/generate_codenames.py`](scripts/generate_codenames.py) — print deterministic codenames
-- [`scripts/record_mission.py`](scripts/record_mission.py) — persist a provenance-outcome mission record
-- [`scripts/z_generate_manuscript_variables.py`](scripts/z_generate_manuscript_variables.py) — hydrate manuscript tokens + render schedule figure
+- [`scripts/generate_codenames.py`](scripts/generate_codenames.py) — print deterministic codenames (any scheme)
+- [`scripts/record_mission.py`](scripts/record_mission.py) — persist (and `--verify`) a provenance-outcome mission record
+- [`scripts/cryptanalyze.py`](scripts/cryptanalyze.py) — frequency/IC/Kasiski/Caesar/Vigenère analysis
+- [`scripts/z_generate_manuscript_variables.py`](scripts/z_generate_manuscript_variables.py) — hydrate manuscript tokens + render both figures
 
 ## Documentation
 

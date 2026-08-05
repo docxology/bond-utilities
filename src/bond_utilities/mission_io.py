@@ -206,6 +206,119 @@ def record_provenance_outcome(
     return record
 
 
+_RECORD_SUFFIXES = (".json", ".yaml", ".yml")
+
+
+def verify_provenance(record: dict) -> bool:
+    """Return True when a record's provenance is internally consistent.
+
+    Recomputes the canonical hash of ``record["parameters"]`` and compares it
+    with ``provenance["input_hash"]``, checks the provenance seed matches the
+    record seed, and confirms the schema version. Records without a full
+    provenance block return False.
+
+    Args:
+        record: A mission record mapping.
+
+    Returns:
+        True iff the stored provenance is reproducible from the parameters.
+    """
+    try:
+        validate_record(record)
+        provenance = record.get("provenance")
+        if not isinstance(provenance, dict):
+            return False
+        if provenance.get("input_hash") != hash_payload(record["parameters"]):
+            return False
+        if provenance.get("seed") != record["seed"]:
+            return False
+        return provenance.get("schema_version") == MISSION_SCHEMA_VERSION
+    except MissionValidationError:
+        return False
+
+
+def load_records(directory: str | Path) -> list[dict]:
+    """Load and validate every mission-record file in ``directory``.
+
+    Files are processed in sorted path order for deterministic output;
+    unsupported suffixes are ignored. A malformed or schema-invalid file
+    raises, wrapped with the offending filename.
+
+    Args:
+        directory: Directory to scan for ``.json`` / ``.yaml`` / ``.yml``.
+
+    Returns:
+        The validated record mappings, in sorted filename order.
+
+    Raises:
+        MissionValidationError: If a record file is malformed or invalid
+            (message includes the filename).
+    """
+    root = Path(directory)
+    records: list[dict] = []
+    for path in sorted(root.iterdir()):
+        if path.suffix.lower() in _RECORD_SUFFIXES and path.is_file():
+            try:
+                records.append(load_record(path))
+            except (MissionValidationError, ValueError) as exc:
+                raise MissionValidationError(f"{path.name}: {exc}") from exc
+    return records
+
+
+def record_summary(record: dict) -> dict:
+    """Return a flat, deterministic summary of a mission record.
+
+    Args:
+        record: A valid mission record mapping.
+
+    Returns:
+        A summary dict with mission id, codename, seed, version, started_at,
+        sorted outcome keys, and the provenance input hash (or None).
+
+    Raises:
+        MissionValidationError: If the record is invalid.
+    """
+    validate_record(record)
+    provenance = record.get("provenance")
+    if not isinstance(provenance, dict):
+        provenance = {}
+    return {
+        "mission_id": record["mission_id"],
+        "codename": record["codename"],
+        "seed": record["seed"],
+        "version": record["version"],
+        "started_at": record["started_at"],
+        "outcome_keys": sorted(record.get("outcomes", {}).keys()),
+        "input_hash": provenance.get("input_hash"),
+    }
+
+
+def append_outcome(record_path: str | Path, outcome_update: dict, fmt: str | None = None) -> dict:
+    """Merge ``outcome_update`` into an existing record's outcomes and save.
+
+    Provenance (input hash, seed, schema version) is preserved untouched;
+    only ``outcomes`` is extended.
+
+    Args:
+        record_path: Path to an existing mission record file.
+        outcome_update: Mapping merged into ``record["outcomes"]``.
+        fmt: Override format; defaults to suffix inference.
+
+    Returns:
+        The updated record mapping (already persisted).
+
+    Raises:
+        MissionValidationError / ValueError / FileNotFoundError: Per
+            :func:`load_record` / :func:`save_record`.
+    """
+    record = load_record(record_path)
+    outcomes = dict(record["outcomes"])
+    outcomes.update(outcome_update)
+    record["outcomes"] = outcomes
+    save_record(record, record_path, fmt=fmt)
+    return record
+
+
 __all__ = [
     "MISSION_SCHEMA_VERSION",
     "MISSION_SCHEMA",

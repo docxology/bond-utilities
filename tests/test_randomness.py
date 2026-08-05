@@ -4,7 +4,20 @@ from __future__ import annotations
 
 import random
 
-from bond_utilities.randomness import derive_seed, make_rng, seeded
+import pytest
+
+from bond_utilities.randomness import (
+    derive_seed,
+    make_rng,
+    seeded,
+    seeded_bytes,
+    seeded_choice,
+    seeded_choices,
+    seeded_float,
+    seeded_int,
+    seeded_sample,
+    seeded_shuffle,
+)
 
 
 class TestDeriveSeed:
@@ -76,3 +89,89 @@ class TestSeeded:
     def test_decorator_preserves_return_value_and_never_raises_through(self) -> None:
         wrapped = seeded(7)(lambda: 42)
         assert wrapped() == 42
+
+
+class TestSeededBytes:
+    def test_deterministic(self) -> None:
+        assert seeded_bytes("ops", 16) == seeded_bytes("ops", 16)
+        assert seeded_bytes("ops", 16) != seeded_bytes("labs", 16)
+
+    def test_length(self) -> None:
+        assert len(seeded_bytes(1, 8)) == 8
+
+    def test_zero_length_raises(self) -> None:
+        with pytest.raises(ValueError, match="length"):
+            seeded_bytes(1, 0)
+
+
+class TestSeededIntFloat:
+    def test_int_deterministic_in_range(self) -> None:
+        assert seeded_int(1, 0, 100) == seeded_int(1, 0, 100)
+        value = seeded_int(5, 10, 20)
+        assert 10 <= value < 20
+
+    def test_int_invalid_range_raises(self) -> None:
+        with pytest.raises(ValueError, match="lo < hi"):
+            seeded_int(1, 20, 20)
+
+    def test_float_deterministic_in_range(self) -> None:
+        assert seeded_float(3, 0.0, 1.0) == seeded_float(3, 0.0, 1.0)
+        value = seeded_float(3, 5.0, 6.0)
+        assert 5.0 <= value < 6.0
+
+    def test_float_invalid_range_raises(self) -> None:
+        with pytest.raises(ValueError, match="lo <= hi"):
+            seeded_float(1, 2.0, 1.0)
+
+
+class TestSeededChoiceChoices:
+    def test_choice_deterministic(self) -> None:
+        items = ["A", "B", "C", "D"]
+        assert seeded_choice("s", items) == seeded_choice("s", items)
+        assert seeded_choice("s", items) in items
+
+    def test_choice_empty_raises(self) -> None:
+        with pytest.raises(ValueError, match="non-empty"):
+            seeded_choice(1, [])
+
+    def test_choices_deterministic_length(self) -> None:
+        items = ["A", "B"]
+        draws = seeded_choices(9, items, 5)
+        assert len(draws) == 5
+        assert draws == seeded_choices(9, items, 5)
+
+    def test_choices_zero_k(self) -> None:
+        assert seeded_choices(9, ["A"], 0) == []
+
+    def test_choices_empty_or_negative_k_raises(self) -> None:
+        with pytest.raises(ValueError, match="non-empty"):
+            seeded_choices(9, [], 2)
+        with pytest.raises(ValueError, match="k >= 0"):
+            seeded_choices(9, ["A"], -1)
+
+
+class TestSeededShuffleSample:
+    def test_shuffle_deterministic_and_does_not_mutate(self) -> None:
+        original = ["A", "B", "C", "D", "E"]
+        first = seeded_shuffle(2, original)
+        second = seeded_shuffle(2, original)
+        assert first == second
+        assert sorted(first) == sorted(original)
+        # Input is not mutated.
+        assert original == ["A", "B", "C", "D", "E"]
+
+    def test_shuffle_actually_permutes_canonical(self) -> None:
+        # For a seed known to change order on a 5-element list.
+        shuffled = seeded_shuffle(1, list(range(5)))
+        assert sorted(shuffled) == list(range(5))
+        assert set(shuffled) == set(range(5))
+
+    def test_sample_deterministic(self) -> None:
+        items = list(range(10))
+        assert seeded_sample(4, items, 3) == seeded_sample(4, items, 3)
+
+    def test_sample_k_out_of_range_raises(self) -> None:
+        with pytest.raises(ValueError):
+            seeded_sample(4, list(range(3)), 5)
+        with pytest.raises(ValueError):
+            seeded_sample(4, list(range(3)), -1)

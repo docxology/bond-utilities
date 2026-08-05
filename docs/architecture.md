@@ -10,7 +10,7 @@ src/bond_utilities/                 scripts/            tests/
   primitives:                        thin CLIs           real data
   ciphers.py        ◄─────────────── generate_codenames    no mocks
   codenames.py      ◄─────────────── record_mission
-  clock.py
+  clock.py                            cryptanalyze
   randomness.py
   mission_io.py     ◄─────────────── z_generate_manuscript_variables
   reporting.py
@@ -26,12 +26,12 @@ Dependencies point one way: `scripts/ → src/`, `src/ → stdlib + numpy + matp
 
 | Module | Pure logic | Side effects |
 | --- | --- | --- |
-| `ciphers.py` | Caesar/Vigenère/OTP/XOR, codename encoding | none |
-| `codenames.py` | Word lists + sampling | none (deterministic) |
-| `clock.py` | elapsed/window/T-minus math | none |
-| `randomness.py` | `derive_seed`, `make_rng`, `seeded` | mutates global `random` briefly, restored |
-| `mission_io.py` | schema + hashing | reads/writes files |
-| `reporting.py` | text rendering | writes to an explicit stream |
+| `ciphers.py` | 9 ciphers (Caesar/Vigenère/OTP/XOR/Atbash/Beaufort/rail/Playfair/columnar) + 8 cryptanalysis helpers, codename encoding | none |
+| `codenames.py` | Word lists + 5 schemes (adjective–noun, alliterative, NATO, numeric, token) | none (deterministic) |
+| `clock.py` | elapsed/window/overlap/merge/duration/T-minus math, `MissionSchedule` | none |
+| `randomness.py` | `derive_seed`, `make_rng`, `seeded`, seeded scalar/sequence draws | mutates global `random` briefly, restored |
+| `mission_io.py` | schema + hashing + provenance verify/append/summary | reads/writes files |
+| `reporting.py` | table/KV/banner/schedule-table rendering | writes to an explicit stream |
 
 ## Forbidden patterns
 

@@ -16,6 +16,7 @@
   "dateModified": "2026-08-04",
   "keywords": [
     "classical ciphers",
+    "cryptanalysis",
     "deterministic codenames",
     "mission scheduling",
     "seeded randomness",
@@ -25,5 +26,5 @@
   "license": "https://spdx.org/licenses/MIT",
   "name": "Q-Branch Field Utility Library",
   "programmingLanguage": "Python",
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

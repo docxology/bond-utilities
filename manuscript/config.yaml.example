@@ -6,11 +6,10 @@ this file (or derived deterministically from it) by
 `src/bond_utilities/manuscript_variables.py`.
 
 ```yaml
-# Mission parameters — consumed by scripts/z_generate_manuscript_variables.py
 paper:
   title: "Q-Branch Field Utility Library"
   subtitle: "Cipher, Codename, Clock, Randomness, and Provenance Primitives for Mission Operations"
-  version: "0.1.0"
+  version: "0.2.0"
   date: "2026-08-04"
 
 authors:
@@ -22,6 +21,7 @@ authors:
 
 keywords:
   - "classical ciphers"
+  - "cryptanalysis"
   - "deterministic codenames"
   - "mission scheduling"
   - "seeded randomness"
@@ -31,13 +31,19 @@ metadata:
   license: "MIT"
   language: "en"
 
+# Mission parameters — every {{TOKEN}} is computed from this section.
 mission:
-  codename: "Q-BRANCH"          # token: {{MISSION_CODENAME}}
-  default_seed: 20260804        # token: {{CONFIG_DEFAULT_SEED}}
-  num_codenames: 6              # token: {{CONFIG_NUM_CODENAMES}}
-  schedule:                     # window math -> {{RESULT_WINDOW_HOURS}}
-    start: "2026-08-04T00:00:00Z"   # {{CONFIG_SCHEDULE_START}}
-    end:   "2026-08-10T00:00:00Z"   # {{CONFIG_SCHEDULE_END}}
+  codename: "Q-BRANCH"            # {{MISSION_CODENAME}}
+  default_seed: 20260804          # {{CONFIG_DEFAULT_SEED}}
+  num_codenames: 6                # {{CONFIG_NUM_CODENAMES}}
+  schedule:                       # {{RESULT_WINDOW_HOURS}}
+    start: "2026-08-04T00:00:00Z"     # {{CONFIG_SCHEDULE_START}}
+    end:   "2026-08-10T00:00:00Z"     # {{CONFIG_SCHEDULE_END}}
+  # A secondary window inside the primary schedule; {{RESULT_OVERLAP_HOURS}}
+  # is the overlap of the two windows.
+  overlap_window:
+    start: "2026-08-06T12:00:00Z"
+    end:   "2026-08-08T12:00:00Z"
 
 testing:
   max_test_failures: 0
@@ -47,9 +53,10 @@ testing:
 
 1. Change a value in `config.yaml` (not here).
 2. Re-run `uv run python scripts/z_generate_manuscript_variables.py` to
-   regenerate `output/data/manuscript_variables.json` and
-   `output/figures/mission_schedule.png`.
+   regenerate `output/data/manuscript_variables.json` and both figures
+   (`output/figures/mission_schedule.png`, `output/figures/letter_frequency.png`).
 3. Re-render the manuscript if the render pipeline is wired.
 4. The live cross-reference test
-   `tests/test_manuscript_variables.py::TestManuscriptCrossReference` fails if
-   any `{{TOKEN}}` in `manuscript/*.md` is not produced by `generate_variables()`.
+   `tests/test_manuscript_variables.py::TestManuscriptCrossReference` fails
+   if any `{{TOKEN}}` in `manuscript/[0-9]*.md` is not produced by
+   `generate_variables()`.

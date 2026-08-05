@@ -51,6 +51,6 @@ uv run mypy src/ scripts/
 ## Verification checklist (before saying "done")
 
 1. `uv run pytest tests/ --cov=src --cov-fail-under=90` — green, 0 skipped, 0 failed.
-2. `rg -n "template_code_project"` — zero leftovers.
+2. `rg -n "template[_]code_project"` — zero leftovers.
 3. `git status` — clean after your commit(s).
 4. Report: modules + concepts built, coverage %, commit SHA.

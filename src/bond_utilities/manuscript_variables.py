@@ -13,9 +13,16 @@ from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
-from .ciphers import CIPHER_NAMES
-from .clock import parse_schedule
-from .codenames import ADJECTIVES, NOUNS, generate_codenames
+from .ciphers import CIPHER_NAMES, CRYPTANALYSIS_HELPERS
+from .clock import parse_schedule, windows_overlap
+from .codenames import (
+    ADJECTIVES,
+    NOUNS,
+    CODENAME_SCHEMES,
+    codenames_by_scheme,
+    generate_codenames,
+    nato_codename,
+)
 
 #: Manuscript config path, relative to the project root.
 CONFIG_RELATIVE = Path("manuscript") / "config.yaml"
@@ -73,10 +80,18 @@ def generate_variables(
     if not isinstance(paper, dict):
         raise ValueError("config.yaml paper section must be a mapping")
 
-    start, end = parse_schedule(mission.get("schedule", {}))
+    mission_schedule = mission.get("schedule")
+    overlap_cfg = mission.get("overlap_window", mission_schedule)
+    if not isinstance(mission_schedule, dict) or not isinstance(overlap_cfg, dict):
+        raise ValueError("mission schedule and overlap_window must be mappings")
+    start, end = parse_schedule(mission_schedule)
     seed = mission.get("default_seed", 0)
     num_codenames = mission.get("num_codenames", 3)
     sample = generate_codenames(num_codenames, seed=seed)
+    # Overlap window defaults to the main schedule (full overlap) when absent.
+    overlap_start, overlap_end = parse_schedule(overlap_cfg)
+    overlap_hours = windows_overlap(start, end, overlap_start, overlap_end).total_seconds() / 3600
+    scheme_sample = codenames_by_scheme(num_codenames, seed=seed, scheme="alliterative")
     stamp = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
 
     return {
@@ -87,8 +102,14 @@ def generate_variables(
         "CONFIG_SCHEDULE_START": start.isoformat(timespec="seconds"),
         "CONFIG_SCHEDULE_END": end.isoformat(timespec="seconds"),
         "RESULT_WINDOW_HOURS": f"{(end - start).total_seconds() / 3600:.1f}",
+        "RESULT_OVERLAP_HOURS": f"{overlap_hours:.1f}",
         "RESULT_CODENAME_SAMPLE": ", ".join(sample),
+        "RESULT_SCHEME_SAMPLE": ", ".join(scheme_sample),
         "CIPHER_COUNT": str(len(CIPHER_NAMES)),
+        "CIPHER_NAMES_CSV": ", ".join(CIPHER_NAMES),
+        "CODENAME_SCHEMES": ", ".join(CODENAME_SCHEMES),
+        "CRYPTANALYSIS_HELPERS": str(len(CRYPTANALYSIS_HELPERS)),
+        "NATO_EXAMPLE": nato_codename("QB7"),
         "WORDLIST_SIZE": f"{len(ADJECTIVES)} x {len(NOUNS)}",
         "GENERATION_TIMESTAMP": stamp,
     }

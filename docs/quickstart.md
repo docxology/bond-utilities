@@ -18,31 +18,39 @@ uv run pytest tests/ --cov=src --cov-fail-under=90
 
 Expect ≥90% line+branch coverage on `src/` (currently 100%), 0 failures.
 
-## 3. Generate codenames
+## 3. Generate codenames (any scheme)
 
 ```bash
 uv run python scripts/generate_codenames.py --count 6 --seed 20260804
+uv run python scripts/generate_codenames.py --count 6 --seed 20260804 --scheme alliterative
 ```
 
-## 4. Persist a mission record
+## 4. Run cryptanalysis on a message
+
+```bash
+uv run python scripts/cryptanalyze.py "THEQUICKBROWNFOX"
+uv run python scripts/cryptanalyze.py --vigenere-length 5 "SOMEVIGENERECIPHERTEXT"
+```
+
+## 5. Persist (and verify) a mission record
 
 ```bash
 uv run python scripts/record_mission.py \
-  --mission-id M-001 --payload '{"target":"grid"}' --out output/data/missions/M-001.json
+  --mission-id M-001 --payload '{"target":"grid"}' --verify --out output/data/missions/M-001.json
 ```
 
-## 5. Hydrate the manuscript
+## 6. Hydrate the manuscript
 
 ```bash
 uv run python scripts/z_generate_manuscript_variables.py
-# writes output/data/manuscript_variables.json and output/figures/mission_schedule.png
+# writes output/data/manuscript_variables.json + both figures
 ```
 
 ## Try the library
 
 ```python
-from bond_utilities import caesar_encrypt, generate_codenames, make_rng
+from bond_utilities import caesar_encrypt, caesar_break, nato_codename, MissionSchedule
 print(caesar_encrypt("Q-BRANCH", 3))
-print(generate_codenames(3, seed=20260804))
-print(make_rng(20260804).random())
+print(caesar_break(caesar_encrypt("THEQUICKBROWNFOX", 7)))   # (7, 'THEQUICKBROWNFOX')
+print(nato_codename("QB7"))                                   # 'QUEBEC-BRAVO-7'
 ```

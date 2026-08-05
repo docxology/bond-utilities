@@ -7,6 +7,7 @@ cff-version: 1.2.0
 date-released: '2026-08-04'
 keywords:
 - classical ciphers
+- cryptanalysis
 - deterministic codenames
 - mission scheduling
 - seeded randomness
@@ -16,4 +17,4 @@ license: MIT
 message: If you use this software, please cite it using the metadata from this file.
 title: Q-Branch Field Utility Library
 type: software
-version: 0.1.0
+version: 0.2.0

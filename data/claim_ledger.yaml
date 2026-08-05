@@ -15,8 +15,20 @@ claims:
     artifact_path: manuscript/config.yaml
   - claim_id: cipher-count
     kind: number
-    value: 4
+    value: 9
     source: src/bond_utilities/ciphers.py CIPHER_NAMES length
+    source_tier: project_source
+    freshness: active
+  - claim_id: cryptanalysis-helpers
+    kind: number
+    value: 8
+    source: src/bond_utilities/ciphers.py CRYPTANALYSIS_HELPERS length
+    source_tier: project_source
+    freshness: active
+  - claim_id: codename-schemes
+    kind: number
+    value: 5
+    source: src/bond_utilities/codenames.py CODENAME_SCHEMES length
     source_tier: project_source
     freshness: active
   - claim_id: wordlist-size
@@ -29,6 +41,13 @@ claims:
     kind: number
     value: 144.0
     source: manuscript/config.yaml mission.schedule (2026-08-04T00:00:00Z -> 2026-08-10T00:00:00Z)
+    source_tier: generated_metric
+    freshness: active
+    artifact_path: manuscript/03_results.md
+  - claim_id: overlap-window-hours
+    kind: number
+    value: 48.0
+    source: src/bond_utilities/clock.py windows_overlap(main, overlap_window)
     source_tier: generated_metric
     freshness: active
     artifact_path: manuscript/03_results.md

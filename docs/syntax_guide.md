@@ -8,20 +8,24 @@ number in prose. The authoritative map is the return value of
 cross-reference test (`tests/test_manuscript_variables.py`) fails if any
 prose token is missing.
 
-Full token list and sources: [`../manuscript/SYNTAX.md`](../manuscript/SYNTAX.md).
+Full token list, sources, and the figure registry:
+[`../manuscript/SYNTAX.md`](../manuscript/SYNTAX.md).
 
 ## Figure registry
 
 | Label | File | Generator |
 | --- | --- | --- |
-| `{#fig:schedule}` | `output/figures/mission_schedule.png` | `src/bond_utilities/figures/plots.py` |
+| `{#fig:schedule}` | `output/figures/mission_schedule.png` | `src/bond_utilities/figures/plots.py::plot_mission_schedule` |
+| `{#fig:freq}` | `output/figures/letter_frequency.png` | `plots.plot_frequency_analysis` |
 
-Reference figures with `[@fig:schedule]` (Pandoc-crossref), never raw `\ref{}`.
+Reference figures with `[@fig:schedule]` / `[@fig:freq]` (Pandoc-crossref),
+never raw `\ref{}`.
 
 ## Citations
 
 Use Pandoc keys from `manuscript/references.bib`: `[@shannon_1949]`,
-`[@kahn_codebreakers]`, `[@matsumoto_1998]`, `[@iso8601]`.
+`[@kahn_codebreakers]`, `[@friedman_1922]`, `[@kasiski_1863]`,
+`[@matsumoto_1998]`, `[@iso8601]`.
 
 ## Markdown links
 

@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from bond_utilities import record_provenance_outcome  # noqa: E402
+from bond_utilities import record_provenance_outcome, verify_provenance  # noqa: E402
 from bond_utilities.reporting import banner, print_kv  # noqa: E402
 
 
@@ -24,10 +24,15 @@ def main() -> int:
     parser.add_argument("--mission-id", required=True, help="stable mission identifier")
     parser.add_argument("--codename", default=None, help="optional mission codename")
     parser.add_argument("--seed", type=str, default="20260804", help="reproducibility seed")
-    parser.add_argument("--version", default="0.1.0", help="package/schema version")
+    parser.add_argument("--version", default="0.2.0", help="package/schema version")
     parser.add_argument("--payload", default="{}", help="JSON input payload, e.g. '{\"n\": 3}'")
     parser.add_argument("--out", required=True, help="destination file (.json or .yaml)")
     parser.add_argument("--fmt", choices=["json", "yaml"], default=None, help="record format")
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="re-verify the persisted record's provenance and print the verdict",
+    )
     args = parser.parse_args()
 
     payload = json.loads(args.payload)
@@ -52,6 +57,9 @@ def main() -> int:
             ("schema_version", record["provenance"]["schema_version"]),
         ]
     )
+    if args.verify:
+        verified = verify_provenance(record)
+        print_kv([("provenance_verified", "true" if verified else "false")])
     return 0
 
 

@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Sequence
+from datetime import datetime
 from typing import TextIO
+
+from .clock import MissionSchedule
 
 Cell = object
 
@@ -103,4 +106,57 @@ def print_kv(
     print(format_kv(pairs), file=stream)
 
 
-__all__ = ["banner", "format_table", "format_kv", "print_table", "print_kv"]
+def schedule_table(
+    schedules: Sequence[MissionSchedule],
+    now: datetime | None = None,
+    headers: Sequence[str] | None = None,
+) -> str:
+    """Render :class:`MissionSchedule` rows as a text table.
+
+    Each row shows the schedule name, start, end, and status at ``now``.
+
+    Args:
+        schedules: Mission schedules to render.
+        now: Reference instant for the status column; defaults to current UTC.
+        headers: Optional column headers; default ``name/start/end/status``.
+
+    Returns:
+        A formatted table string.
+
+    Raises:
+        ValueError: If a row is not a :class:`MissionSchedule`.
+    """
+    default_headers = ["name", "start", "end", "status"]
+    rows: list[list[str]] = []
+    for schedule in schedules:
+        if not isinstance(schedule, MissionSchedule):
+            raise ValueError("schedule_table requires MissionSchedule rows")
+        rows.append(
+            [
+                schedule.name,
+                schedule.start.isoformat(timespec="seconds"),
+                schedule.end.isoformat(timespec="seconds"),
+                schedule.status(now=now),
+            ]
+        )
+    return format_table(rows, headers=headers if headers is not None else default_headers)
+
+
+def print_schedule_table(
+    schedules: Sequence[MissionSchedule],
+    now: datetime | None = None,
+    stream: TextIO = sys.stdout,
+) -> None:
+    """Print :func:`schedule_table` output to ``stream`` (default stdout)."""
+    print(schedule_table(schedules, now=now), file=stream)
+
+
+__all__ = [
+    "banner",
+    "format_table",
+    "format_kv",
+    "print_table",
+    "print_kv",
+    "schedule_table",
+    "print_schedule_table",
+]

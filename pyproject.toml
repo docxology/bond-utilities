@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bond-utilities"
-version = "0.1.0"
+version = "0.2.0"
 license = {text = "MIT"}
 description = "Q-Branch field utility library: ciphers, codenames, mission clock, seeded randomness, mission records, reporting"
 authors = [

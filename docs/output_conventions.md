@@ -12,7 +12,8 @@ uv run python scripts/z_generate_manuscript_variables.py
 | Path | Producer | Consumer |
 | --- | --- | --- |
 | `output/data/manuscript_variables.json` | `scripts/z_generate_manuscript_variables.py` | manuscript render / validation |
-| `output/figures/mission_schedule.png` | same script → `src/bond_utilities/figures/plots.py` | manuscript `[@fig:schedule]` |
+| `output/figures/mission_schedule.png` | same script → `src/bond_utilities/figures/plots.py::plot_mission_schedule` | manuscript `[@fig:schedule]` |
+| `output/figures/letter_frequency.png` | same script → `plots.plot_frequency_analysis` | manuscript `[@fig:freq]` |
 
 Mission records written by `scripts/record_mission.py` are user-specified
 files (e.g. `output/data/missions/*.json`), not part of the fixed layout.

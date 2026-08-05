@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from bond_utilities import generate_codenames  # noqa: E402
+from bond_utilities import CODENAME_SCHEMES, generate_codenames  # noqa: E402
 from bond_utilities.reporting import banner, print_table  # noqa: E402
 
 
@@ -22,10 +22,17 @@ def main() -> int:
     parser.add_argument("--count", type=int, default=5, help="number of codenames")
     parser.add_argument("--seed", type=str, default="20260804", help="reproducibility seed")
     parser.add_argument("--separator", type=str, default="-", help="adjective/noun joiner")
+    parser.add_argument(
+        "--scheme",
+        type=str,
+        default="adjective_noun",
+        choices=CODENAME_SCHEMES,
+        help="deterministic codename scheme",
+    )
     args = parser.parse_args()
 
-    names = generate_codenames(args.count, seed=args.seed, separator=args.separator)
-    print(banner("Q-BRANCH CODENAME GENERATOR"))
+    names = generate_codenames(args.count, seed=args.seed, separator=args.separator, scheme=args.scheme)
+    print(banner(f"Q-BRANCH CODENAME GENERATOR [{args.scheme}]"))
     print_table(
         [[str(index + 1), name] for index, name in enumerate(names)],
         headers=["#", "codename"],

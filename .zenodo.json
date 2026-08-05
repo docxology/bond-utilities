@@ -9,6 +9,7 @@
   "description": "Q-Branch field utility library: ciphers, codenames, mission clock, seeded randomness, mission records, and reporting primitives for the BOND suite.",
   "keywords": [
     "classical ciphers",
+    "cryptanalysis",
     "deterministic codenames",
     "mission scheduling",
     "seeded randomness",
@@ -18,5 +19,6 @@
   "license": "MIT",
   "title": "Q-Branch Field Utility Library",
   "upload_type": "software",
-  "version": "0.1.0"
+  "version": "0.2.0",
+  "dateModified": "2026-08-04"
 }

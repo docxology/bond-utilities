@@ -16,12 +16,13 @@ from bond_utilities.manuscript_variables import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 FULL_CONFIG = {
-    "paper": {"version": "0.1.0", "title": "Q-Branch Field Utility Library"},
+    "paper": {"version": "0.2.0", "title": "Q-Branch Field Utility Library"},
     "mission": {
         "codename": "Q-BRANCH",
         "default_seed": 20260804,
         "num_codenames": 6,
         "schedule": {"start": "2026-08-04T00:00:00Z", "end": "2026-08-10T00:00:00Z"},
+        "overlap_window": {"start": "2026-08-06T12:00:00Z", "end": "2026-08-08T12:00:00Z"},
     },
 }
 
@@ -70,8 +71,14 @@ class TestGenerateVariables:
             "CONFIG_SCHEDULE_START",
             "CONFIG_SCHEDULE_END",
             "RESULT_WINDOW_HOURS",
+            "RESULT_OVERLAP_HOURS",
             "RESULT_CODENAME_SAMPLE",
+            "RESULT_SCHEME_SAMPLE",
             "CIPHER_COUNT",
+            "CIPHER_NAMES_CSV",
+            "CODENAME_SCHEMES",
+            "CRYPTANALYSIS_HELPERS",
+            "NATO_EXAMPLE",
             "WORDLIST_SIZE",
             "GENERATION_TIMESTAMP",
         }
@@ -80,11 +87,18 @@ class TestGenerateVariables:
     def test_values(self) -> None:
         v = generate_variables(config=FULL_CONFIG, now=FIXED_NOW)
         assert v["MISSION_CODENAME"] == "Q-BRANCH"
-        assert v["PACKAGE_VERSION"] == "0.1.0"
+        assert v["PACKAGE_VERSION"] == "0.2.0"
         assert v["CONFIG_DEFAULT_SEED"] == "20260804"
         assert v["CONFIG_NUM_CODENAMES"] == "6"
         assert v["RESULT_WINDOW_HOURS"] == "144.0"
-        assert v["CIPHER_COUNT"] == "4"
+        assert v["RESULT_OVERLAP_HOURS"] == "48.0"
+        assert v["CIPHER_COUNT"] == "9"
+        assert v["CRYPTANALYSIS_HELPERS"] == "8"
+        assert v["NATO_EXAMPLE"] == "QUEBEC-BRAVO-7"
+        assert v["CIPHER_NAMES_CSV"] == (
+            "caesar, vigenere, one_time_pad, xor, atbash, beaufort, rail_fence, playfair, columnar"
+        )
+        assert v["CODENAME_SCHEMES"] == "adjective_noun, alliterative, nato, numeric, token"
         assert v["WORDLIST_SIZE"] == "12 x 12"
         assert v["GENERATION_TIMESTAMP"] == "2026-08-04T12:00:00+00:00"
         assert v["CONFIG_SCHEDULE_START"] == "2026-08-04T00:00:00+00:00"
@@ -124,12 +138,26 @@ class TestGenerateVariables:
         with pytest.raises(ValueError, match="missing required key 'start'"):
             generate_variables(config=bad, now=FIXED_NOW)
 
+    def test_non_mapping_schedule_raises(self) -> None:
+        cfg = {"paper": {}, "mission": {"schedule": "not-a-mapping"}}
+        with pytest.raises(ValueError, match="mappings"):
+            generate_variables(config=cfg, now=FIXED_NOW)
+
+    def test_non_mapping_overlap_window_raises(self) -> None:
+        cfg = {
+            "paper": {},
+            "mission": {
+                "schedule": {"start": "2026-08-04T00:00:00Z", "end": "2026-08-05T00:00:00Z"},
+                "overlap_window": "not-a-mapping",
+            },
+        }
+        with pytest.raises(ValueError, match="mappings"):
+            generate_variables(config=cfg, now=FIXED_NOW)
+
     def test_defaults_when_values_absent(self) -> None:
         minimal = {
             "paper": {},
-            "mission": {
-                "schedule": {"start": "2026-08-04T00:00:00Z", "end": "2026-08-05T00:00:00Z"}
-            },
+            "mission": {"schedule": {"start": "2026-08-04T00:00:00Z", "end": "2026-08-05T00:00:00Z"}},
         }
         v = generate_variables(config=minimal, now=FIXED_NOW)
         assert v["MISSION_CODENAME"] == "Q-BRANCH"

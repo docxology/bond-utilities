@@ -12,11 +12,15 @@ import yaml
 from bond_utilities.mission_io import (
     MISSION_SCHEMA_VERSION,
     MissionValidationError,
+    append_outcome,
     hash_payload,
     load_record,
+    load_records,
     record_provenance_outcome,
+    record_summary,
     save_record,
     validate_record,
+    verify_provenance,
 )
 from bond_utilities.randomness import derive_seed
 
@@ -203,3 +207,133 @@ class TestRecordProvenanceOutcome:
             now=now,
         )
         assert record["seed"] == 42
+
+
+def _persisted(n: int, tmp_path: Path) -> dict:
+    """Write a provenance-verified record via the canonical helper and return it."""
+    now = datetime(2026, 8, 4, tzinfo=timezone.utc)
+    return record_provenance_outcome(
+        mission_id=f"M-{n}",
+        seed=n,
+        version="0.2.0",
+        input_payload={"n": n},
+        outcome={"n": n},
+        path=tmp_path / f"m{n}.json",
+        now=now,
+    )
+
+
+class TestVerifyProvenance:
+    def test_valid_record(self, tmp_path: Path) -> None:
+        record = _persisted(1, tmp_path)
+        assert verify_provenance(record) is True
+
+    def test_tampered_parameters(self, tmp_path: Path) -> None:
+        record = _persisted(1, tmp_path)
+        record["parameters"]["n"] = 999
+        assert verify_provenance(record) is False
+
+    def test_wrong_seed(self, tmp_path: Path) -> None:
+        record = _persisted(1, tmp_path)
+        record["seed"] = 12345
+        assert verify_provenance(record) is False
+
+    def test_missing_provenance_key(self) -> None:
+        record = _valid_record()
+        del record["provenance"]
+        assert verify_provenance(record) is False
+
+    def test_non_dict_provenance(self) -> None:
+        record = _valid_record()
+        record["provenance"] = "not-a-dict"
+        assert verify_provenance(record) is False
+
+    def test_schema_version_mismatch(self) -> None:
+        record = _valid_record()
+        record["provenance"] = {
+            "input_hash": hash_payload(record["parameters"]),
+            "seed": record["seed"],
+            "schema_version": "9.9",
+        }
+        assert verify_provenance(record) is False
+
+    def test_invalid_record(self) -> None:
+        record = _valid_record()
+        del record["seed"]
+        assert verify_provenance(record) is False
+
+
+class TestLoadRecords:
+    def test_loads_json_and_yaml_sorted(self, tmp_path: Path) -> None:
+        _persisted(2, tmp_path)
+        _persisted(1, tmp_path)
+        # A YAML record too.
+        now = datetime(2026, 8, 4, tzinfo=timezone.utc)
+        record_provenance_outcome(
+            mission_id="M-5",
+            seed=5,
+            version="0.2.0",
+            input_payload={},
+            outcome={},
+            path=tmp_path / "m5.yaml",
+            now=now,
+        )
+        # A non-record file is ignored.
+        (tmp_path / "notes.txt").write_text("not a record")
+        records = load_records(tmp_path)
+        ids = [record["mission_id"] for record in records]
+        # Sorted filename order: m1, m2, m5.
+        assert ids == ["M-1", "M-2", "M-5"]
+
+    def test_empty_directory(self, tmp_path: Path) -> None:
+        assert load_records(tmp_path) == []
+
+    def test_bad_file_raises_with_name(self, tmp_path: Path) -> None:
+        (tmp_path / "broken.json").write_text("{nope")
+        with pytest.raises(MissionValidationError, match="broken.json"):
+            load_records(tmp_path)
+
+
+class TestRecordSummary:
+    def test_fields(self) -> None:
+        record = _valid_record()
+        record["outcomes"] = {"b": 1, "a": 2}
+        record["provenance"] = {"input_hash": "abc"}
+        summary = record_summary(record)
+        assert summary["mission_id"] == "M-001"
+        assert summary["outcome_keys"] == ["a", "b"]
+        assert summary["input_hash"] == "abc"
+
+    def test_no_provenance_gives_none(self) -> None:
+        record = _valid_record()
+        del record["provenance"]
+        summary = record_summary(record)
+        assert summary["input_hash"] is None
+        assert summary["outcome_keys"] == []
+
+    def test_invalid_record_raises(self) -> None:
+        record = _valid_record()
+        del record["version"]
+        with pytest.raises(MissionValidationError):
+            record_summary(record)
+
+
+class TestAppendOutcome:
+    def test_merges_and_preserves_provenance(self, tmp_path: Path) -> None:
+        record = _persisted(1, tmp_path)
+        target = tmp_path / "m1.json"
+        updated = append_outcome(target, {"consumed": True})
+        assert updated["outcomes"] == {"n": 1, "consumed": True}
+        # Provenance is preserved and still verifies.
+        assert verify_provenance(updated)
+        assert updated["provenance"] == record["provenance"]
+
+    def test_overrides_existing_key(self, tmp_path: Path) -> None:
+        target = tmp_path / "m1.json"
+        _persisted(1, tmp_path)
+        updated = append_outcome(target, {"n": 99})
+        assert updated["outcomes"] == {"n": 99}
+
+    def test_missing_file_raises(self, tmp_path: Path) -> None:
+        with pytest.raises(FileNotFoundError):
+            append_outcome(tmp_path / "nope.json", {"x": 1})

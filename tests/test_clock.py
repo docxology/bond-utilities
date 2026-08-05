@@ -7,15 +7,20 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from bond_utilities.clock import (
+    MissionSchedule,
     elapsed_time,
     format_elapsed,
+    merge_windows,
+    parse_duration,
     parse_schedule,
     parse_timestamp,
+    schedule_status,
     t_minus,
     to_utc,
     window_elapsed,
     window_open,
     window_remaining,
+    windows_overlap,
 )
 
 UTC = timezone.utc
@@ -156,3 +161,133 @@ class TestParseSchedule:
     def test_end_before_start(self) -> None:
         with pytest.raises(ValueError, match="must not precede"):
             parse_schedule({"start": "2026-08-10T00:00:00Z", "end": "2026-08-04T00:00:00Z"})
+
+
+class TestWindowsOverlap:
+    A_START = _dt(2026, 8, 4, 0)
+    A_END = _dt(2026, 8, 8, 0)
+    B_START = _dt(2026, 8, 6, 0)
+    B_END = _dt(2026, 8, 10, 0)
+
+    def test_partial_overlap(self) -> None:
+        assert windows_overlap(self.A_START, self.A_END, self.B_START, self.B_END) == timedelta(days=2)
+
+    def test_contained(self) -> None:
+        # B fully inside A.
+        assert windows_overlap(self.A_START, self.A_END, _dt(2026, 8, 5, 0), _dt(2026, 8, 6, 0)) == timedelta(days=1)
+
+    def test_disjoint(self) -> None:
+        assert windows_overlap(self.A_START, self.A_END, _dt(2026, 8, 9, 0), _dt(2026, 8, 12, 0)) == timedelta(0)
+
+    def test_touching_is_zero(self) -> None:
+        assert windows_overlap(self.A_START, self.A_END, self.A_END, _dt(2026, 8, 12, 0)) == timedelta(0)
+
+    def test_invalid_window_raises(self) -> None:
+        with pytest.raises(ValueError, match="window A"):
+            windows_overlap(self.A_END, self.A_START, self.B_START, self.B_END)
+        with pytest.raises(ValueError, match="window B"):
+            windows_overlap(self.A_START, self.A_END, self.B_END, self.B_START)
+
+
+class TestMergeWindows:
+    def test_merges_overlapping(self) -> None:
+        windows = [
+            (_dt(2026, 8, 4, 0), _dt(2026, 8, 6, 0)),
+            (_dt(2026, 8, 5, 0), _dt(2026, 8, 9, 0)),
+            (_dt(2026, 8, 10, 0), _dt(2026, 8, 12, 0)),
+        ]
+        merged = merge_windows(windows)
+        assert len(merged) == 2
+        assert merged[0] == (_dt(2026, 8, 4, 0), _dt(2026, 8, 9, 0))
+        assert merged[1] == (_dt(2026, 8, 10, 0), _dt(2026, 8, 12, 0))
+
+    def test_nested_and_touching(self) -> None:
+        merged = merge_windows(
+            [
+                (_dt(2026, 8, 4, 0), _dt(2026, 8, 10, 0)),
+                (_dt(2026, 8, 5, 0), _dt(2026, 8, 6, 0)),
+                (_dt(2026, 8, 10, 0), _dt(2026, 8, 11, 0)),
+            ]
+        )
+        assert merged == [(_dt(2026, 8, 4, 0), _dt(2026, 8, 11, 0))]
+
+    def test_sorted_output(self) -> None:
+        merged = merge_windows([(_dt(2026, 8, 8, 0), _dt(2026, 8, 9, 0)), (_dt(2026, 8, 4, 0), _dt(2026, 8, 5, 0))])
+        assert merged == [(_dt(2026, 8, 4, 0), _dt(2026, 8, 5, 0)), (_dt(2026, 8, 8, 0), _dt(2026, 8, 9, 0))]
+
+    def test_invalid_window_raises(self) -> None:
+        with pytest.raises(ValueError, match="must not precede"):
+            merge_windows([(_dt(2026, 8, 6, 0), _dt(2026, 8, 4, 0))])
+
+    def test_empty(self) -> None:
+        assert merge_windows([]) == []
+
+
+class TestParseDuration:
+    @pytest.mark.parametrize(
+        "text,expected",
+        [
+            ("1d 2h30m", timedelta(days=1, hours=2, minutes=30)),
+            ("90m", timedelta(minutes=90)),
+            ("45s", timedelta(seconds=45)),
+            ("3d", timedelta(days=3)),
+            ("2H", timedelta(hours=2)),
+        ],
+    )
+    def test_valid(self, text: str, expected: timedelta) -> None:
+        assert parse_duration(text) == expected
+
+    @pytest.mark.parametrize("text", ["", "  ", "5", "1x", "abc", "1h2", "h"])
+    def test_invalid(self, text: str) -> None:
+        with pytest.raises(ValueError):
+            parse_duration(text)
+
+
+class TestScheduleStatus:
+    START = _dt(2026, 8, 4, 0)
+    END = _dt(2026, 8, 6, 0)
+
+    def test_pending(self) -> None:
+        assert schedule_status(self.START, self.END, now=_dt(2026, 8, 3, 0)) == "PENDING"
+
+    def test_active(self) -> None:
+        assert schedule_status(self.START, self.END, now=_dt(2026, 8, 5, 0)) == "ACTIVE"
+
+    def test_active_at_start(self) -> None:
+        assert schedule_status(self.START, self.END, now=self.START) == "ACTIVE"
+
+    def test_complete(self) -> None:
+        assert schedule_status(self.START, self.END, now=_dt(2026, 8, 7, 0)) == "COMPLETE"
+
+    def test_complete_at_end(self) -> None:
+        assert schedule_status(self.START, self.END, now=self.END) == "COMPLETE"
+
+    def test_invalid_raises(self) -> None:
+        with pytest.raises(ValueError, match="must not precede"):
+            schedule_status(self.END, self.START, now=self.START)
+
+
+class TestMissionSchedule:
+    def _window(self) -> MissionSchedule:
+        return MissionSchedule("grid", _dt(2026, 8, 4, 0), _dt(2026, 8, 6, 0))
+
+    def test_from_config(self) -> None:
+        window = MissionSchedule.from_config("grid", {"start": "2026-08-04T00:00:00Z", "end": "2026-08-06T00:00:00Z"})
+        assert window.name == "grid"
+        assert window.duration == timedelta(days=2)
+
+    def test_properties(self) -> None:
+        window = self._window()
+        assert window.duration == timedelta(days=2)
+        assert window.open(now=_dt(2026, 8, 5, 0)) is True
+        assert window.open(now=_dt(2026, 8, 7, 0)) is False
+        assert window.elapsed(now=_dt(2026, 8, 5, 0)) == timedelta(days=1)
+        assert window.elapsed(now=_dt(2026, 8, 2, 0)) == timedelta(0)
+        assert window.remaining(now=_dt(2026, 8, 5, 0)) == timedelta(days=1)
+        assert window.remaining(now=_dt(2026, 8, 9, 0)) == timedelta(0)
+        assert window.countdown(now=_dt(2026, 8, 4, 0)) == "T-00:00:00"
+        assert window.status(now=_dt(2026, 8, 5, 0)) == "ACTIVE"
+
+    def test_invalid_raises(self) -> None:
+        with pytest.raises(ValueError, match="must not precede"):
+            MissionSchedule("bad", _dt(2026, 8, 6, 0), _dt(2026, 8, 4, 0))

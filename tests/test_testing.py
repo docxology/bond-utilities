@@ -39,6 +39,6 @@ class TestFixtures:
 
     def test_mission_record_is_valid_dict(self, mission_record: dict) -> None:
         assert mission_record["mission_id"] == "M-001"
-        assert set(
-            ["mission_id", "codename", "seed", "version", "started_at", "parameters"]
-        ) <= set(mission_record.keys())
+        assert set(["mission_id", "codename", "seed", "version", "started_at", "parameters"]) <= set(
+            mission_record.keys()
+        )

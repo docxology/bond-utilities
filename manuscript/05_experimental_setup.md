@@ -15,7 +15,11 @@ never hardcode them.
 | Schedule start (UTC) | {{CONFIG_SCHEDULE_START}} |
 | Schedule end (UTC) | {{CONFIG_SCHEDULE_END}} |
 | Window duration | {{RESULT_WINDOW_HOURS}} hours |
+| Overlap with secondary window | {{RESULT_OVERLAP_HOURS}} hours |
 | Cipher primitives | {{CIPHER_COUNT}} |
+| Cipher registry | {{CIPHER_NAMES_CSV}} |
+| Codename schemes | {{CODENAME_SCHEMES}} |
+| Cryptanalysis helpers | {{CRYPTANALYSIS_HELPERS}} |
 | Word-list capacity | {{WORDLIST_SIZE}} |
 | Generation timestamp | {{GENERATION_TIMESTAMP}} |
 
@@ -23,4 +27,5 @@ never hardcode them.
 
 The package requires Python ≥ 3.10 and depends only on `numpy`,
 `matplotlib`, and `pyyaml`. Tests use `pytest` and `pytest-cov`; no mock
-framework is used anywhere.
+framework is used anywhere. All randomness is seeded; functions with a
+wall-clock default take an explicit `now=/seed=` override in tests.
