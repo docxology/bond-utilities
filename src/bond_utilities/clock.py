@@ -46,6 +46,8 @@ def parse_timestamp(text: str) -> datetime:
     Raises:
         ValueError: If ``text`` is not a parseable timestamp.
     """
+    if not isinstance(text, str):
+        raise ValueError(f"timestamp must be a string, got {type(text).__name__}")
     normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
     return to_utc(datetime.fromisoformat(normalized))
 

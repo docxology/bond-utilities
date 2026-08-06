@@ -291,3 +291,15 @@ class TestMissionSchedule:
     def test_invalid_raises(self) -> None:
         with pytest.raises(ValueError, match="must not precede"):
             MissionSchedule("bad", _dt(2026, 8, 6, 0), _dt(2026, 8, 4, 0))
+
+
+class TestParseTimestampValidation:
+    """A non-string timestamp must raise ValueError, not AttributeError."""
+
+    def test_parse_timestamp_rejects_non_string(self) -> None:
+        with pytest.raises(ValueError, match="string"):
+            parse_timestamp(12345)
+
+    def test_parse_schedule_rejects_non_string_values(self) -> None:
+        with pytest.raises(ValueError, match="string"):
+            parse_schedule({"start": 123, "end": 456})

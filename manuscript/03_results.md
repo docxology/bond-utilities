@@ -27,6 +27,25 @@ uniform random text. The figure
 
 ![Letter frequency of the codename sample.](../output/figures/letter_frequency.png){#fig:freq width=70%}
 
+## Edge-case robustness
+
+The cipher alphabet is ASCII `A-Z`/`a-z` by definition ([@unicode_standard]).
+Non-ASCII alphabetic characters -- `é`, `ñ`, and letters from other
+scripts, which Python's `str.isalpha()` classifies as letters -- are treated as
+*nothing to the cipher*: the enciphering functions pass them through byte-for-
+byte, and the frequency, index-of-coincidence, and chi-squared helpers ignore
+them entirely. That contract is asserted as a regression test
+(`tests/test_ciphers.py::TestNonAsciiRobustness`), which pins three properties
+that previously failed: the A-Z counting helpers accept mixed-alphabet text
+without crashing, a non-ASCII letter never corrupts a cipher round-trip, and
+`caesar_break`/`english_chi_squared` treat a non-ASCII-only input as letterless
+rather than misinterpreting it. The same hardening closes two validation gaps
+in the primitives' edge behaviour: a non-string timestamp raises `ValueError`
+rather than leaking an internal `AttributeError`
+(`tests/test_clock.py::TestParseTimestampValidation`), and an empty header list
+to `format_table` means *no header* rather than tripping the ragged-row guard
+(`tests/test_reporting.py::TestFormatTableHeadersEdge`).
+
 ## Determinism
 
 All **{{CIPHER_COUNT}}** ciphers ({{CIPHER_NAMES_CSV}}) and the codename

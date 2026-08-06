@@ -80,6 +80,7 @@ class TestGenerateVariables:
             "ALLITERATIVE_CAPACITY",
             "CIPHER_COUNT",
             "CIPHER_NAMES_CSV",
+            "CIPHER_DESCRIPTION_TABLE",
             "CODENAME_SCHEMES",
             "CODENAME_SCHEME_COUNT",
             "CRYPTANALYSIS_HELPERS",

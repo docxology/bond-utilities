@@ -526,3 +526,46 @@ class TestVigenereBreak:
 
 def test_cross_module_seed_agreement() -> None:
     assert derive_seed("mission") == derive_seed("mission")
+
+
+class TestNonAsciiRobustness:
+    """Non-ASCII alphabetic characters are *non-letters* in this module.
+
+    Every cipher document conceals -- and every counting helper promises --
+    "letters A-Z / non-letters pass through". Guard the class of bug where a
+    non-ASCII letter (e.g. é, ñ) crashed the A-Z counters with a KeyError or
+    was silently corrupted by the ciphers.
+    """
+
+    def test_letter_frequency_ignores_non_ascii_and_emits_only_a_to_z(self) -> None:
+        counts = letter_frequency("caf\u00e9 x\u00f1")
+        # Negative control: no non-ASCII key may appear, and it must not crash.
+        assert all("a" <= key <= "z" for key in counts)
+        assert "\u00e9" not in counts and "\u00f1" not in counts
+        assert counts["c"] == 1 and counts["a"] == 1 and counts["f"] == 1
+        assert counts["x"] == 1
+
+    def test_frequency_normalized_and_ic_and_chi_match_ascii_projection(self) -> None:
+        # Non-ASCII letters are ignored, so results equal the ASCII-only body.
+        assert frequency_normalized("abcabc\u00e9") == frequency_normalized("abcabc")
+        assert index_of_coincidence("abcabc\u00e9") == index_of_coincidence("abcabc")
+        assert english_chi_squared("abc\u00ef\u00e9\u00f1") == english_chi_squared("abc")
+
+    def test_ciphers_pass_non_ascii_letters_through_unchanged(self) -> None:
+        # é is not a cipher letter: ASCII neighbours shift, é itself is untouched.
+        assert caesar_encrypt("caf\u00e9", 3) == "fdi\u00e9"
+        # Round-trip still holds over the whole (mixed) string.
+        from bond_utilities.ciphers import caesar_decrypt
+
+        assert caesar_decrypt(caesar_encrypt("caf\u00e9 rue", 7), 7) == "caf\u00e9 rue"
+
+    def test_break_and_counts_treat_non_ascii_only_text_as_letterless(self) -> None:
+        from bond_utilities.ciphers import caesar_break
+
+        with pytest.raises(ValueError, match="at least one letter"):
+            caesar_break("\u00e9\u00ef\u00f1")
+        assert english_chi_squared("\u00e9\u00ef") == 0.0
+
+    def test_vigenere_rejects_non_ascii_key(self) -> None:
+        with pytest.raises(ValueError, match="only letters"):
+            vigenere_encrypt("MISSION", "caf\u00e9")

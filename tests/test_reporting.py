@@ -148,3 +148,18 @@ class TestScheduleTable:
         with contextlib.redirect_stdout(buffer):
             print_schedule_table(self._windows(), now=datetime(2026, 8, 5, tzinfo=timezone.utc))
         assert "grid" in buffer.getvalue()
+
+
+class TestFormatTableHeadersEdge:
+    """An empty header list means 'no header', matching headers=None."""
+
+    def test_empty_headers_list_renders_data_without_separator(self) -> None:
+        assert format_table([["a", "b"], ["c", "d"]], headers=[]) == format_table(
+            [["a", "b"], ["c", "d"]], headers=None
+        )
+        assert "-" not in format_table([["a", "b"]], headers=[])
+
+    def test_empty_headers_list_never_raises_ragged(self) -> None:
+        # Regression: inserting an empty header row used to trip the ragged-row
+        # guard on every non-empty table.
+        assert format_table([["a", "b"]], headers=[]) == "a  b"

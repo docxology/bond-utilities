@@ -347,3 +347,51 @@ verified to fail when the thing it guards is broken:
 Note: `uv` may fail with `Failed to initialize cache at ~/.cache/uv` under a
 restrictive sandbox. That is an environment problem, not a package failure —
 re-run outside the sandbox.
+
+---
+
+## Round-2 (2026-08-06)
+
+Second deep-improvement pass. Baseline this session: `uv run pytest tests/ --cov=src --cov-fail-under=90`
+→ **400 passed, 100.00%** line+branch over `src/` (836 stmts / 280 branches); `ruff check`,
+`ruff format --check`, `mypy src` all clean. Hostile review of `src/` found three real
+edge defects; all fixed with regression tests, and the manuscript was deepened against
+the live engine.
+
+### Findings → fixes (each with test evidence)
+
+| Finding | Fix | Test evidence |
+| --- | --- | --- |
+| **SEVERE — non-ASCII letters break the counting/cryptanalysis family.** `letter_frequency`, `frequency_normalized`, `index_of_coincidence`, `english_chi_squared` raised `KeyError` on any non-ASCII alphabetic char (é, ñ, Cyrillic, CJK) because only A-Z keys were zero-filled, and the ciphers silently corrupted such chars (`ord(char)-base` garbage) despite every docstring promising "non-letters pass through untouched". | Added `ciphers._is_letter()` (ASCII A-Z/a-z) and routed every cipher-letter check through it (shift, Vigenère, Beaufort, Atbash, obfuscate, Playfair square/prepare/decrypt, frequency, IC, chi, `caesar_break`, Kasiski, Vigenère-column cleaning). Non-ASCII letters are now *non-letters*: passed through unchanged by ciphers, ignored by counters. | `tests/test_ciphers.py::TestNonAsciiRobustness` (5 tests): mixed-alphabet frequency emits only a-z keys, IC/chi equal the ASCII projection, `caesar_encrypt("café",3)=="fdié"` round-trips, non-ASCII-only input to `caesar_break` raises the documented "at least one letter" `ValueError`, Vigenère rejects a non-ASCII key. |
+| **MODERATE — `parse_timestamp` leaked `AttributeError`** on a non-string value, contradicting its documented `ValueError` contract, so `parse_schedule` with an int/None value crash-looped instead of reporting cleanly. | `clock.parse_timestamp` now validates `isinstance(text, str)` and raises `ValueError` first. | `tests/test_clock.py::TestParseTimestampValidation` (2 tests): `parse_timestamp(12345)` and `parse_schedule({"start":123,"end":456})` both raise `ValueError`. |
+| **MINOR — `format_table(rows, headers=[])` raised ragged-row `ValueError`** on every non-empty table, because an empty header list inserted an empty leading row tripping the cell-count guard. | `reporting.format_table` normalizes `not headers` to "no header" (equivalent to `headers=None`) before inserting, so an empty header list never creates a false-ragged table or a spurious separator. | `tests/test_reporting.py::TestFormatTableHeadersEdge` (2 tests): `format_table(rows, headers=[]) == format_table(rows, headers=None)` and never contains a `-` separator, never raises. |
+
+### Manuscript deepening (all numbers live, none hand-copied)
+
+- New engine-bound token `{{CIPHER_DESCRIPTION_TABLE}}` in `manuscript_variables.py`
+  (markdown rows from the live `CIPHER_DESCRIPTIONS` registry) + a **Cipher catalogue**
+  table in `02_methodology.md`; registered in `tests/test_manuscript_variables.py`'s
+  `expected` token set so cross-reference stays green.
+- New **Edge-case robustness** subsection in `03_results.md` (numeral-free, qualitative)
+  describing the ASCII-only cipher alphabet, non-ASCII pass-through, and the three
+  regression tests that pin it.
+- New `unicode_standard` entry in `manuscript/references.bib` + `99_references.md`
+  (Text encoding section) grounding the ASCII scope decision.
+- Regenerated `output/data/manuscript_variables.json` (27 tokens) + both figures from the
+  live engine; the whole-tree regeneration-determinism guard re-verified byte-identical
+  across a real clock tick.
+
+### Final gates (measured 2026-08-06)
+
+`uv run pytest tests/ --cov=src --cov-fail-under=90` → **409 passed, 100.00%** (842 stmts /
+284 branches, 0 missed). `ruff check` clean; `ruff format --check` 28 files formatted;
+`mypy src` success (11 files). Mock gate: clean. Regeneration determinism, figure
+byte-determinism, and all 22 documented-example tests pass.
+
+### Left for a future round
+
+- Nothing new is open from this pass. The pre-existing backlog items (V1–V5, D1–D2,
+  E1–E3) are unchanged and remain the authoritative forward list. In particular E2
+  (a *measured* sample-floor curve for `caesar_break`/`vigenere_break`) would be a
+  natural complement to the new robustness section, and D2 (steer callers away from
+  codenames-as-identifiers in the docstrings) is still unshipped.

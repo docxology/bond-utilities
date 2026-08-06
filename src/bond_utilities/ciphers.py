@@ -119,9 +119,24 @@ _ALPHABET_SIZE = 26
 _DIGIT_SIZE = 10
 
 
+def _is_letter(char: str) -> bool:
+    """True for an ASCII ``A-Z`` / ``a-z`` letter (the cipher alphabet).
+
+    The whole module's "letter" semantics are deliberately ASCII-only:
+    :meth:`str.isalpha` also accepts non-ASCII alphabetic characters (e.g.
+    ``é``, ``ñ``, Cyrillic, CJK), and treating those as cipher letters would
+    both corrupt them in the ciphers and crash the A-Z counting helpers
+    (:func:`letter_frequency` and the cryptanalysis built on it) with a
+    ``KeyError``. Routing every check through this helper fixes that class:
+    a non-ASCII letter is a *non-letter* -- passed through unchanged by the
+    ciphers and ignored by frequency/IC/chi-squared counting.
+    """
+    return ("A" <= char <= "Z") or ("a" <= char <= "z")
+
+
 def _shift_letter(char: str, shift: int) -> str:
     """Shift one ASCII letter by ``shift`` positions, preserving case."""
-    if not char.isalpha():
+    if not _is_letter(char):
         return char
     base = ord("a") if char.islower() else ord("A")
     return chr(base + (ord(char) - base + shift) % _ALPHABET_SIZE)
@@ -149,13 +164,13 @@ def _vigenere(text: str, key: str, encrypt: bool) -> str:
     """Shared Vigenère engine; only letters advance the key position."""
     if not key:
         raise ValueError("vigenere key must not be empty")
-    if not key.isalpha():
+    if not all(_is_letter(c) for c in key):
         raise ValueError("vigenere key must contain only letters")
     out: list[str] = []
     key_index = 0
     direction = 1 if encrypt else -1
     for char in text:
-        if not char.isalpha():
+        if not _is_letter(char):
             out.append(char)
             continue
         shift = direction * (ord(key[key_index % len(key)].lower()) - ord("a"))
@@ -258,7 +273,7 @@ def obfuscate_codename(codename: str, shift: int) -> str:
     """
     out: list[str] = []
     for char in codename:
-        if char.isalpha():
+        if _is_letter(char):
             base = ord("a") if char.islower() else ord("A")
             out.append(chr(base + (ord(char) - base + shift) % _ALPHABET_SIZE))
         elif char.isdigit():
@@ -315,7 +330,7 @@ def atbash(text: str) -> str:
     """
     out: list[str] = []
     for char in text:
-        if char.isalpha():
+        if _is_letter(char):
             base = ord("a") if char.islower() else ord("A")
             out.append(chr(base + (_ALPHABET_SIZE - 1) - (ord(char) - base)))
         else:
@@ -327,12 +342,12 @@ def _beaufort(text: str, key: str) -> str:
     """Shared Beaufort engine: ``c = (k - p) mod 26``; letters only."""
     if not key:
         raise ValueError("beaufort key must not be empty")
-    if not key.isalpha():
+    if not all(_is_letter(c) for c in key):
         raise ValueError("beaufort key must contain only letters")
     out: list[str] = []
     key_index = 0
     for char in text:
-        if not char.isalpha():
+        if not _is_letter(char):
             out.append(char)
             continue
         key_shift = ord(key[key_index % len(key)].lower()) - ord("a")
@@ -417,7 +432,7 @@ def _playfair_square(key: str) -> list[list[str]]:
     for char in (key + "ABCDEFGHIKLMNOPQRSTUVWXYZ").upper():
         if char == "J":
             char = "I"
-        if char.isalpha() and char not in square:
+        if _is_letter(char) and char not in square:
             square.append(char)
     return [square[offset : offset + 5] for offset in range(0, 25, 5)]
 
@@ -433,7 +448,7 @@ def _playfair_prepare(text: str) -> str:
     Repeated adjacent letters are split with an inserted ``X`` and an odd
     final letter is padded with ``X``, so the output is always even-length.
     """
-    cleaned = "".join("I" if char == "J" else char for char in text.upper() if char.isalpha())
+    cleaned = "".join("I" if char == "J" else char for char in text.upper() if _is_letter(char))
     prepared: list[str] = []
     index = 0
     while index < len(cleaned):
@@ -509,7 +524,7 @@ def playfair_decrypt(text: str, key: str) -> str:
     """
     square = _playfair_square(key)
     positions = _playfair_positions(square)
-    cleaned = "".join(char for char in text.upper() if char.isalpha())
+    cleaned = "".join(char for char in text.upper() if _is_letter(char))
     if len(cleaned) % 2 != 0:
         raise ValueError("playfair ciphertext length must be even")
     out: list[str] = []
@@ -594,7 +609,7 @@ def letter_frequency(text: str) -> dict[str, int]:
     """
     counts = {chr(code): 0 for code in range(ord("a"), ord("z") + 1)}
     for char in text:
-        if char.isalpha():
+        if _is_letter(char):
             counts[char.lower()] += 1
     return counts
 
@@ -685,7 +700,7 @@ def caesar_break(text: str) -> tuple[int, str]:
     Raises:
         ValueError: If the text contains no letters.
     """
-    if not any(char.isalpha() for char in text):
+    if not any(_is_letter(char) for char in text):
         raise ValueError("caesar_break requires at least one letter")
     shift, _ = caesar_shift_scores(text)[0]
     return shift, caesar_decrypt(text, shift)
@@ -712,7 +727,7 @@ def kasiski_key_lengths(text: str, max_length: int = 10, min_run: int = 3) -> li
     """
     if max_length < 2:
         raise ValueError("max_length must be >= 2")
-    cleaned = "".join(char for char in text.upper() if char.isalpha())
+    cleaned = "".join(char for char in text.upper() if _is_letter(char))
     if len(cleaned) < min_run * 2:
         return []
     distances: list[int] = []
@@ -732,7 +747,7 @@ def kasiski_key_lengths(text: str, max_length: int = 10, min_run: int = 3) -> li
 
 def _vigenere_columns(text: str, key_length: int) -> list[str]:
     """Split letter-only uppercase text into ``key_length`` Caesar columns."""
-    cleaned = "".join(char for char in text.upper() if char.isalpha())
+    cleaned = "".join(char for char in text.upper() if _is_letter(char))
     return [cleaned[index::key_length] for index in range(key_length)]
 
 

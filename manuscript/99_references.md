@@ -58,6 +58,15 @@ and written by `mission_io.record_provenance_outcome()` into each record's
 writes no timestamp of its own — it merges outcomes and leaves the existing
 record's timestamps and provenance block untouched.
 
+## Text encoding
+
+**[unicode_standard]** Unicode Consortium, *The Unicode Standard*. — The
+reference behind the phrase "alphabetic character"; it is why the cipher
+helpers here scope their alphabet to ASCII `A-Z`/`a-z` and treat every other
+alphabetic character (`é`, `ñ`, Cyrillic, CJK) as a non-letter. Cited in
+`02_methodology.md` and `03_results.md` for the edge-case robustness contract,
+and asserted by `tests/test_ciphers.py::TestNonAsciiRobustness`.
+
 ## Suite context
 
 The BOND suite documentation and the frozen `bond-api` mission protocol are

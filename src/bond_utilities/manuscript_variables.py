@@ -19,7 +19,7 @@ from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
-from .ciphers import CIPHER_NAMES, CRYPTANALYSIS_HELPERS
+from .ciphers import CIPHER_DESCRIPTIONS, CIPHER_NAMES, CRYPTANALYSIS_HELPERS
 from .clock import parse_schedule, windows_overlap
 from .codenames import (
     ADJECTIVES,
@@ -178,6 +178,7 @@ def generate_variables(
         "ALLITERATIVE_CAPACITY": str(len(alliterative_pairs)),
         "CIPHER_COUNT": str(len(CIPHER_NAMES)),
         "CIPHER_NAMES_CSV": ", ".join(CIPHER_NAMES),
+        "CIPHER_DESCRIPTION_TABLE": "\n".join(f"| {name} | {CIPHER_DESCRIPTIONS[name]} |" for name in CIPHER_NAMES),
         "CODENAME_SCHEMES": ", ".join(CODENAME_SCHEMES),
         "CODENAME_SCHEME_COUNT": str(len(CODENAME_SCHEMES)),
         "CRYPTANALYSIS_HELPERS": str(len(CRYPTANALYSIS_HELPERS)),

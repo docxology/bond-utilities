@@ -65,6 +65,11 @@ def format_table(
         ValueError: If rows have inconsistent cell counts.
     """
     table: list[list[str]] = [[str(cell) for cell in row] for row in rows]
+    # An empty header list is equivalent to no header: inserting an empty
+    # row first would make the guard below reject every non-empty table as
+    # ragged, which is not what the caller asked for.
+    if headers is not None and not headers:
+        headers = None
     if headers is not None:
         table.insert(0, [str(header) for header in headers])
     if table and any(len(row) != len(table[0]) for row in table):

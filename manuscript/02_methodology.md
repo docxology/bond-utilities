@@ -13,6 +13,24 @@ digit-key order, round-trips exactly with no padding). **Byte:** one-time-pad
 key). Every cipher satisfies `decrypt(encrypt(x)) == x` on supported inputs;
 the digraph cipher round-trips against its prepared (X-split, padded) form.
 
+### Cipher catalogue
+
+The compiled table below is generated from the live `CIPHER_DESCRIPTIONS`
+registry (token `{{CIPHER_DESCRIPTION_TABLE}}`), so it cannot drift from the
+modules it documents.
+
+| cipher | description |
+| --- | --- |
+{{CIPHER_DESCRIPTION_TABLE}}
+
+All cipher "letters" are ASCII `A-Z`/`a-z` by definition
+([@unicode_standard]). A character that `str.isalpha()` treats as a letter but
+that lies outside the 26-letter English alphabet -- e.g. `é`, `ñ`, or a
+Cyrillic letter -- is a *non-letter* to these primitives: the ciphers pass it
+through unchanged, and the frequency/counting helpers ignore it, so
+mixed-alphabet mission text stays safe to pipe through any cipher without a
+crash or silent corruption.
+
 ## Cryptanalysis helpers
 
 - `letter_frequency` / `frequency_normalized` — A-Z counts and relative
