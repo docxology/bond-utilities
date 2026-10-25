@@ -70,4 +70,4 @@ and asserted by `tests/test_ciphers.py::TestNonAsciiRobustness`.
 ## Suite context
 
 The BOND suite documentation and the frozen `bond-api` mission protocol are
-internal to this local-only working tree and carry no external citation.
+internal to the BOND working trees and carry no external citation.

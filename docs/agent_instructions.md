@@ -5,13 +5,16 @@ modifying source, tests, scripts, docs, or the manuscript.
 
 ## Rule 1 — Work only inside this package
 
-Scope is exactly `projects/working/bond/bond-utilities/`. Do not touch sibling
-bond packages, the bond root files, or the template repo. Commit inside this
-directory's own git repo only.
+Scope is exactly this package tree, `bond-utilities/` (its own git repo). Do not
+touch sibling bond packages, the bond root files, or the template repo. Commit
+inside this directory's own git repo only.
 
-## Rule 2 — Local only
+## Rule 2 — One repo, one remote
 
-This is a LOCAL-ONLY working tree. There is no remote. Never push.
+This tree is its own git repo on branch `main`, with a single remote:
+`github.com/docxology/bond-utilities`. Publishing goes through the vault tooling
+in the parent workspace. Never add a remote, never push another branch, never
+force-push, never rewrite history.
 
 ## Rule 3 — Zero mocks
 

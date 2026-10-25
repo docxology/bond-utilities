@@ -8,8 +8,10 @@ test fixtures.
 
 **Codename:** Q-BRANCH · **Version:** 0.3.0 · **License:** MIT
 
-This is a **LOCAL-ONLY working tree** — there is no remote and nothing is
-ever pushed.
+This tree is its own git repo (branch `main`) with one remote,
+`github.com/docxology/bond-utilities`. Publish through the vault tooling in the
+parent workspace — never add a remote ad hoc, never push to another branch,
+never force-push.
 
 ## Layer contract
 
