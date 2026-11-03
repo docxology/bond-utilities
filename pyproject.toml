@@ -72,4 +72,4 @@ exclude_lines = [
 ]
 
 [tool.uv]
-# Local-only working tree; install with: uv sync --extra dev
+# Working tree; install with: uv sync --extra dev
