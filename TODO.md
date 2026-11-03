@@ -155,6 +155,34 @@ assertion needs either a reworded comment or a value-shaped match.
 - **Demonstrate:** change `# 'ACTIVE'` to `# 'PENDING'` in `README.md`;
   `uv run pytest tests/test_documented_examples.py -q` must fail.
 
+#### V6 — The documented gate measures whatever `pytest` is first on `PATH`
+
+`AGENTS.md` wrote `uv run pytest tests/ --cov=src --cov-fail-under=90`, but
+`pytest` is declared in the `dev` extra (`pyproject.toml`), so the bare form
+installs nothing into the project environment and uv falls through to the host
+instead of failing. Measured 2026-11-03 in a fresh worktree of `2d82478`: that
+line ran Homebrew's pytest 8.4.2 on Python 3.13 against the host's numpy and
+died in collection with `ImportError: cannot import name
+'VisibleDeprecationWarning' from 'numpy'` — a reading of the wrong environment,
+which is worse than a missing command because the number that comes back is
+plausible. With `--extra dev` the same line resolves to pytest 9.0.2 in `.venv`.
+The line is corrected here; the finding stays open because two more lines of the
+same block have the same shape:
+
+- `AGENTS.md:167-169` — `ruff` and `mypy` are declared nowhere in
+  `pyproject.toml`, so those lines resolve to whatever the machine has. On this
+  machine the ambient `/opt/homebrew/bin/mypy` cannot even print its version
+  (`ModuleNotFoundError: No module named 'typing_extensions'`), so the typing
+  line returns a tool error rather than a typing result.
+- **Residual hole:** the block's text is the only statement of which interpreter
+  and which tools ran; nothing in the suite notices when a line measures the host.
+- **Done looks like:** every line names the extra that declares its tool, or the
+  tools move into `dev`, so each command fails loudly rather than resolving
+  elsewhere. `uv sync --extra dev` stays the install step it already documents.
+- **Command:** `uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90`
+  runs pytest 9.0.2 from `.venv`; the same line without the extra runs a foreign
+  pytest when one is earlier on `PATH`.
+
 ### Documentation
 
 #### D1 — "Re-derive, don't edit the assertion" is not machine-enforced

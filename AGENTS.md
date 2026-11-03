@@ -163,10 +163,10 @@ print(format_table([["1", "SILENT-JAGUAR"]], headers=["#", "codename"]))
 ## Testing
 
 ```bash
-uv run pytest tests/ --cov=src --cov-fail-under=90      # line+branch on src/
+uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90  # line+branch on src/
 uv run ruff check src/ scripts/
 uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/                               # mypy_path="src" in pyproject
+uv run mypy src/ scripts/                                       # mypy_path="src" in pyproject
 rg -n "unittest\.mock|MagicMock|@patch|create_autospec" tests/ || echo clean
 ```
 
