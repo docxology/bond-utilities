@@ -29,7 +29,7 @@ never hardcode them.
 
 ## Software environment
 
-The package requires Python ≥ 3.10 and depends only on `numpy`,
+The package requires Python ≥ 3.11 and depends only on `numpy`,
 `matplotlib`, and `pyyaml`. Tests use `pytest` and `pytest-cov`; no mock
 framework is used anywhere. All randomness is seeded; functions with a
 wall-clock default take an explicit `now=/seed=` override in tests.
