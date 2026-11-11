@@ -423,3 +423,7 @@ byte-determinism, and all 22 documented-example tests pass.
   (a *measured* sample-floor curve for `caesar_break`/`vigenere_break`) would be a
   natural complement to the new robustness section, and D2 (steer callers away from
   codenames-as-identifiers in the docstrings) is still unshipped.
+
+## Workflowz review — 2026-11-10
+
+Bounded read-only review of the supplied packet covered the root guidance, README, existing TODO, Python/runtime and dependency declarations, package exports, seeded randomness, reporting, shared pytest helpers, figure generation, and the codename CLI. No new independently closable finding is supported by the visible evidence: the existing TODO already records the documented-example and tool-environment verification gaps, while the reviewed production paths contain no evidenced silent mock, fallback, fake, stub, or unimplemented substitute. The Python target remains `.python-version:1` = `3.15` with `pyproject.toml:16` = `>=3.11`; the packet supplies no dependency or deployment constraint establishing a concrete version change. Re-review on a concrete failure or a source/manifest change affecting these inspected surfaces.
