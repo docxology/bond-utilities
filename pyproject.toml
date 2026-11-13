@@ -43,7 +43,7 @@ warn_unused_configs = true
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 # Default ruff rules plus E501 so the documented 120-column limit is enforced,
