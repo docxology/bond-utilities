@@ -9,6 +9,28 @@ clock/schedule math, seeded randomness, provenance mission records, and
 plain-text reporting. Every other bond package imports from it, and it imports
 none of them.
 
+## Layer-0 primitive flow
+
+```mermaid
+flowchart TD
+    accTitle: bond-utilities deterministic field primitives from inputs to suite consumers
+    accDescr: Explicit mission seeds, plaintext or ciphertext, schedule windows and raw mission payloads feed randomness.py and codenames.py for seeded RNG and codename generation, ciphers.py and clock.py for round-trip classic ciphers, cryptanalysis and window math, and mission_io.py and reporting.py for SHA-256 provenance records and plain-text tables consumed across the BOND suite.
+    I["Explicit mission seed, text payloads, schedule windows and mission records"]
+    G0["randomness.py and codenames.py<br/>SHA-derived seeded RNG streams and 5 deterministic codename schemes"]
+    G1["ciphers.py and clock.py<br/>9 round-trip classic ciphers, 8 cryptanalysis breakers and schedule window math"]
+    G2["mission_io.py and reporting.py<br/>Schema-validated JSON/YAML I/O, SHA-256 provenance hashes and plain-text tables"]
+    O["Zero-dependency Layer-0 primitives consumed by Layers 1-4 and all 27 film packages"]
+
+    I --> G0
+    I --> G1
+    I --> G2
+    G0 --> O
+    G1 --> O
+    G2 --> O
+```
+
+**Source map:** [`ciphers.py`](src/bond_utilities/ciphers.py), [`codenames.py`](src/bond_utilities/codenames.py), [`clock.py`](src/bond_utilities/clock.py), [`randomness.py`](src/bond_utilities/randomness.py), [`mission_io.py`](src/bond_utilities/mission_io.py), [`reporting.py`](src/bond_utilities/reporting.py), [`testing.py`](src/bond_utilities/testing.py).
+
 **Principles**
 
 - **Deterministic** — one seed fully determines codenames, keys, draws, and test streams.
