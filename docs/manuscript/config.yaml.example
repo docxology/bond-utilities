@@ -57,8 +57,8 @@ testing:
 2. Re-run `uv run python scripts/z_generate_manuscript_variables.py` to
    regenerate `output/data/manuscript_variables.json` and both figures
    (`output/figures/mission_schedule.png`, `output/figures/letter_frequency.png`).
-3. Re-render the manuscript if the render pipeline is wired.
+3. Follow docs/rendering.md to hydrate, render, and validate the manuscript.
 4. The live cross-reference test
    `tests/test_manuscript_variables.py::TestManuscriptCrossReference` fails
-   if any `{{TOKEN}}` in `manuscript/[0-9]*.md` is not produced by
+   if any `{{TOKEN}}` in `docs/manuscript/[0-9]*.md` is not produced by
    `generate_variables()`.

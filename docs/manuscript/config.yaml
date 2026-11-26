@@ -38,13 +38,13 @@ mission:
     start: "2026-08-04T00:00:00Z"
     end: "2026-08-10T00:00:00Z"
   # A secondary window inside the primary schedule; the manuscript's
-  # {{RESULT_OVERLAP_HOURS}} token is the overlap of these two windows.
+  # RESULT_OVERLAP_HOURS token is the overlap of these two windows.
   overlap_window:
     start: "2026-08-06T12:00:00Z"
     end: "2026-08-08T12:00:00Z"
 
 # Quality-gate parameters. The manuscript quotes these through the
-# {{COVERAGE_GATE_PERCENT}} / {{MAX_TEST_FAILURES}} tokens; the enforced value
+# COVERAGE_GATE_PERCENT / MAX_TEST_FAILURES tokens; the enforced value
 # lives in pyproject.toml ([tool.coverage.report] fail_under) and
 # tests/test_manuscript_variables.py asserts the two agree.
 testing:

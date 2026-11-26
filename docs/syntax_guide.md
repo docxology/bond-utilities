@@ -14,12 +14,12 @@ in `tests/test_manuscript_variables.py` enforce it:
   the guard cannot go vacuous.
 
 Gate numbers (`{{COVERAGE_GATE_PERCENT}}`, `{{MAX_TEST_FAILURES}}`) come from
-the `testing:` section of `manuscript/config.yaml`, and
+the `testing:` section of `docs/manuscript/config.yaml`, and
 `TestGateNumbersAgreeWithEnforcement` asserts the coverage figure equals the
 `fail_under` value `pyproject.toml` actually enforces.
 
 Full token list, sources, and the figure registry:
-[`../manuscript/SYNTAX.md`](../manuscript/SYNTAX.md).
+[`../manuscript/SYNTAX.md`](manuscript/SYNTAX.md).
 
 ## Figure registry
 
@@ -33,7 +33,7 @@ never raw `\ref{}`.
 
 ## Citations
 
-Use Pandoc keys from `manuscript/references.bib`: `[@shannon_1949]`,
+Use Pandoc keys from `docs/manuscript/references.bib`: `[@shannon_1949]`,
 `[@kahn_codebreakers]`, `[@stinson_paterson_2018]`, `[@friedman_1922]`,
 `[@kasiski_1863]`, `[@matsumoto_1998]`, `[@iso8601]`. Every entry is a real,
 checkable publication — never add one you have not verified exists.

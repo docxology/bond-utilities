@@ -59,7 +59,7 @@ supplies the primitives those providers are built from — notably
 ## Rule 8 — Manuscript numbers are computed
 
 Never hand-author a metric in prose. Every number in the manuscript arrives as
-a `{{TOKEN}}` from `manuscript/config.yaml` via
+a `{{TOKEN}}` from `docs/manuscript/config.yaml` via
 `src/bond_utilities/manuscript_variables.py`. If you state a new quantitative
 result, add the variable first, then reference the token. Two tests enforce
 this: a token cross-reference and a bare-numeral guard over the abstract,
@@ -77,18 +77,18 @@ is public API, in `src/bond_utilities/__init__.py` — `mission_io` and
 
 ```bash
 uv run pytest tests/ --cov=src --cov-fail-under=90
-uv run ruff check src/ scripts/
-uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/
+uv run --with ruff ruff check src/ scripts/
+uv run --with ruff ruff format --check src/ scripts/
+uv run --with mypy --with types-PyYAML mypy src/ scripts/
 ```
 
 ## Verification checklist (before saying "done")
 
 1. `uv run pytest tests/ --cov=src --cov-fail-under=90` — green, 0 skipped,
    0 failed, coverage at or above the `fail_under` floor in `pyproject.toml`.
-2. `uv run ruff check src/ scripts/` and `uv run ruff format --check src/ scripts/`
+2. `uv run --with ruff ruff check src/ scripts/` and `uv run --with ruff ruff format --check src/ scripts/`
    — clean.
-3. `uv run mypy src/ scripts/` — clean.
+3. `uv run --with mypy --with types-PyYAML mypy src/ scripts/` — clean.
 4. `rg -n "template[_]code_project"` — zero leftovers outside docs that
    explicitly explain the exemplar lineage.
 5. `git status` — clean after your commit(s).

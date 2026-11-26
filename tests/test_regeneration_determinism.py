@@ -1,6 +1,6 @@
-"""Binds the byte-identical regeneration claim in `manuscript/06_reproducibility.md`.
+"""Binds the byte-identical regeneration claim in `docs/manuscript/06_reproducibility.md`.
 
-The manuscript, `README.md` and `AGENTS.md` all state that running the single
+The manuscript, `docs/library.md` and `AGENTS.md` all state that running the single
 documented regeneration command twice on the same commit rewrites `output/`
 byte for byte. That is a claim about the *persisted artifacts produced by the
 real command*, so this module tests exactly that: it shells out to
@@ -134,7 +134,7 @@ class TestRegenerationIsByteIdentical:
         today = time.strftime("%Y-%m-%d", time.gmtime())
         offenders = [name for name, value in variables.items() if value == today]
         # The only date-bearing token is CONFIG_MANUSCRIPT_DATE, read from
-        # `manuscript/config.yaml`. It may legitimately coincide with today's
+        # `docs/manuscript/config.yaml`. It may legitimately coincide with today's
         # date, so it is exempt -- but nothing else may.
         offenders = [name for name in offenders if name != "CONFIG_MANUSCRIPT_DATE"]
         assert not offenders, f"tokens holding today's date rather than a committed value: {offenders}"

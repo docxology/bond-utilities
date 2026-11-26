@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Thin CLI: hydrate manuscript ``{{TOKEN}}``s and render the figures.
 
-Reads ``manuscript/config.yaml`` via src/bond_utilities/manuscript_variables.py,
+Reads ``docs/manuscript/config.yaml`` via src/bond_utilities/manuscript_variables.py,
 writes the resolved token map to ``output/data/manuscript_variables.json``,
 and renders two deterministic figures referenced by the manuscript:
 
 - ``output/figures/mission_schedule.png`` — the mission schedule window;
 - ``output/figures/letter_frequency.png`` — letter counts of the codename sample.
+
+The figure registry binds both PNG filenames to their manuscript labels.
 
 Nothing written here reads the wall clock. The schedule figure's reference
 marker is pinned to ``manuscript_variables.manuscript_instant(config)`` (a
@@ -58,9 +60,26 @@ def main() -> int:
         # left at the library default it would move the dashed line between runs
         # and break the byte-identical regeneration claim.
         reference = manuscript_instant(config)
-        rendered.append(plot_mission_schedule(start, end, now=reference, path=figure_dir / "mission_schedule.png"))
+        schedule_path = plot_mission_schedule(start, end, now=reference, path=figure_dir / "mission_schedule.png")
         sample_text = " ".join(variables["RESULT_CODENAME_SAMPLE"].split(", "))
-        rendered.append(plot_frequency_analysis(sample_text, path=figure_dir / "letter_frequency.png"))
+        frequency_path = plot_frequency_analysis(sample_text, path=figure_dir / "letter_frequency.png")
+        rendered.extend((schedule_path, frequency_path))
+
+        registry = {
+            "fig:schedule": {
+                "filename": schedule_path.name,
+                "generated_by": "scripts/z_generate_manuscript_variables.py",
+                "alt_text": "Timeline of the configured mission window and its fixed reference marker.",
+            },
+            "fig:freq": {
+                "filename": frequency_path.name,
+                "generated_by": "scripts/z_generate_manuscript_variables.py",
+                "alt_text": "Bar chart of ASCII letter counts in the generated codename sample.",
+            },
+        }
+        (figure_dir / "figure_registry.json").write_text(
+            json.dumps(registry, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     print(f"wrote {len(variables)} variables -> {out}")
     for path in rendered:

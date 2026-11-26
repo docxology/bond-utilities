@@ -15,7 +15,7 @@ clean at `git status --short`.
 
 This file tracks what is *left*. Completed work is deleted from here — the
 shipped surface is described in [`README.md`](README.md) and
-[`docs/architecture.md`](docs/architecture.md), and the history is in `git log`.
+[`docs/architecture.md`](architecture.md), and the history is in `git log`.
 
 ---
 
@@ -227,24 +227,11 @@ in `ciphers.py`) are not named there.
 
 Genuine future work — nothing here is wrong today.
 
-#### E1 — Wire a manuscript render pipeline
+#### E1 — Manuscript rendering
 
-`scripts/z_generate_manuscript_variables.py` produces
-`output/data/manuscript_variables.json` plus both figures
-(`output/figures/mission_schedule.png`, `letter_frequency.png`), and
-`tests/test_manuscript_variables.py:207` cross-references every `{{TOKEN}}` in
-prose against the generated map. Nothing substitutes those tokens into a
-rendered document. The old blocker ("the suite has not chosen a renderer") no
-longer holds: `../bond-manuscript/` carries `_template_resources/`,
-`export.toml`, and `docs/rendering_pipeline.md` describing the template PDF
-pipeline. `bond-utilities` has no `export.toml` and no `.template-export.json`.
-
-- **Done looks like:** `output/pdf/bond_utilities_combined.pdf` (or the
-  suite-standard path) exists, is regenerable from a clean `output/`, and
-  contains zero unsubstituted `{{` sequences.
-- **Demonstrate:** the render command completes, then a new test asserting the
-  extracted text of the rendered document contains no `{{` residue passes —
-  `uv run pytest tests/ -k render -q`.
+The [pinned render guide](rendering.md) records the checkout, variable
+substitution, render, and validation commands. This entry supersedes the
+earlier renderer selection discussion.
 
 #### E2 — Measure the sample floor for `caesar_break` and `vigenere_break`
 
@@ -306,7 +293,7 @@ Accepted scope. These are recorded so they are not re-litigated.
   fails loudly. **D1** only asks for a better failure message.
 - **No `mission.py`, no `MissionProvider`, no `GADGETS`.** The protocol belongs
   to `bond-api` (Layer 1). Implementing it here would invert the dependency
-  direction. See [`docs/architecture.md`](docs/architecture.md).
+  direction. See [`docs/architecture.md`](architecture.md).
 - **No cryptographic strength.** The cipher suite is educational and
   deterministic by design. Do not "harden" it; do not use it for secrecy. It
   provides no authentication, integrity, or non-repudiation.

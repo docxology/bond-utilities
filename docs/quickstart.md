@@ -1,13 +1,15 @@
 # Quickstart — bond-utilities
 
-A 5-minute first run.
+Use Git, uv, and Python 3.14 for the locked workflow below.
+The package supports Python 3.11 and newer.
 
 ## 1. Install
 
 From inside this package directory:
 
 ```bash
-uv sync --extra dev
+uv sync --locked --extra dev --python 3.14
+export UV_PYTHON=3.14
 ```
 
 ## 2. Run the tests
@@ -41,12 +43,15 @@ uv run python scripts/record_mission.py \
   --mission-id M-001 --payload '{"target":"grid"}' --verify --out output/data/missions/M-001.json
 ```
 
-## 6. Hydrate the manuscript
+## 6. Generate manuscript inputs
 
 ```bash
 uv run python scripts/z_generate_manuscript_variables.py
-# writes output/data/manuscript_variables.json + both figures
+# Writes output/data/manuscript_variables.json and both figures.
 ```
+
+Continue to the [render and validation guide](rendering.md) to build the
+publication editions.
 
 ## Try the library
 

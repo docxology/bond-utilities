@@ -25,7 +25,7 @@ never force-push.
 
 Dependencies point one way: `scripts/ → src/`, `src/ → stdlib + numpy +
 matplotlib + pyyaml`, `tests/ → src/`. See
-[`manuscript/layer_contract.yaml`](manuscript/layer_contract.yaml).
+[`docs/manuscript/layer_contract.yaml`](docs/manuscript/layer_contract.yaml).
 
 ## Modules
 
@@ -38,7 +38,7 @@ matplotlib + pyyaml`, `tests/ → src/`. See
 | [`src/bond_utilities/mission_io.py`](src/bond_utilities/mission_io.py) | JSON/YAML records, schema validation, provenance persistence + verify/append/summary |
 | [`src/bond_utilities/reporting.py`](src/bond_utilities/reporting.py) | Plain-text table/KV/banner/schedule-table output for thin CLIs |
 | [`src/bond_utilities/testing.py`](src/bond_utilities/testing.py) | Two shared pytest fixtures (`seeded_rng`, `mission_record`) + two plain helpers (`temp_dir`, `seeded_codenames`) |
-| [`src/bond_utilities/manuscript_variables.py`](src/bond_utilities/manuscript_variables.py) | `{{TOKEN}}` map from `manuscript/config.yaml` |
+| [`src/bond_utilities/manuscript_variables.py`](src/bond_utilities/manuscript_variables.py) | `{{TOKEN}}` map from `docs/manuscript/config.yaml` |
 | [`src/bond_utilities/figures/plots.py`](src/bond_utilities/figures/plots.py) | Schedule + letter-frequency figures |
 
 ## Installation
@@ -164,9 +164,9 @@ print(format_table([["1", "SILENT-JAGUAR"]], headers=["#", "codename"]))
 
 ```bash
 uv run --extra dev pytest tests/ --cov=src --cov-fail-under=90  # line+branch on src/
-uv run ruff check src/ scripts/
-uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/                                       # mypy_path="src" in pyproject
+uv run --with ruff ruff check src/ scripts/
+uv run --with ruff ruff format --check src/ scripts/
+uv run --with mypy --with types-PyYAML mypy src/ scripts/                                       # mypy_path="src" in pyproject
 rg -n "unittest\.mock|MagicMock|@patch|create_autospec" tests/ || echo clean
 ```
 
@@ -183,8 +183,8 @@ cross-reference, hand-authored-numeral guard with a positive control,
 mutation rejection, byte-determinism for *both* figures, end-to-end
 regeneration determinism (`scripts/z_generate_manuscript_variables.py` run
 twice across a real clock tick, whole-tree digest compared), documented-example
-verification (every worked example in this file, the README and the quickstart
-is executed and its quoted output is required to appear verbatim), and CLI flag
+verification (quoted cipher and codename results are checked against live
+functions), and CLI flag
 behaviour.
 
 ## Scripts
@@ -196,7 +196,7 @@ behaviour.
 
 ## Documentation
 
-Agent-facing docs live in [`docs/`](docs/AGENTS.md) (read-first:
+Agent-facing docs live in [`docs/`](docs/README.md) (read-first:
 [`docs/agent_instructions.md`](docs/agent_instructions.md)). The manuscript
-source is in [`manuscript/`](manuscript/AGENTS.md). A Hermes skill for this
+source is in [`docs/manuscript/`](docs/manuscript/AGENTS.md). A Hermes skill for this
 package lives at [`.agents/skills/bond-utilities/SKILL.md`](.agents/skills/bond-utilities/SKILL.md).
