@@ -2,8 +2,8 @@
 
 ## Purpose
 
-`src/bond_utilities/` is the shared, dependency-free foundation of the BOND
-suite. Every other bond package imports from it.
+`src/bond_utilities/` is the shared foundation of the BOND suite.
+It has no dependencies on other BOND packages.
 
 ## Modules
 
@@ -16,7 +16,7 @@ suite. Every other bond package imports from it.
 | `mission_io.py` | JSON/YAML persistence, schema, provenance verify/append/summary | file I/O |
 | `reporting.py` | Table/KV/banner/schedule-table output | writes to an explicit stream |
 | `testing.py` | Two pytest fixtures (`seeded_rng`, `mission_record`) + two plain helpers (`temp_dir`, `seeded_codenames`) | import-light, no mocks |
-| `manuscript_variables.py` | `{{TOKEN}}` map from `manuscript/config.yaml` | reads config |
+| `manuscript_variables.py` | `{{TOKEN}}` map from `docs/manuscript/config.yaml` | reads config |
 | `figures/plots.py` | Schedule + letter-frequency figures | writes PNG |
 
 ## Rules
@@ -31,4 +31,4 @@ suite. Every other bond package imports from it.
 ## See also
 
 - [`../docs/architecture.md`](../docs/architecture.md)
-- [`../manuscript/layer_contract.yaml`](../manuscript/layer_contract.yaml)
+- [`../manuscript/layer_contract.yaml`](../docs/manuscript/layer_contract.yaml)

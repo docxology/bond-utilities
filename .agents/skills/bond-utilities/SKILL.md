@@ -23,9 +23,9 @@ inside the package.
 ```bash
 # From the package root
 uv run pytest tests/ --cov=src --cov-fail-under=90   # enforced floor = pyproject fail_under
-uv run ruff check src/ scripts/
-uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/
+uv run --with ruff ruff check src/ scripts/
+uv run --with ruff ruff format --check src/ scripts/
+uv run --with mypy --with types-PyYAML mypy src/ scripts/
 
 # Regenerate manuscript tokens + schedule figure
 uv run python scripts/z_generate_manuscript_variables.py
@@ -41,7 +41,7 @@ uv run python scripts/z_generate_manuscript_variables.py
   numpy/matplotlib/pyyaml. No `infrastructure.*`, no other bond package.
 - **Determinism.** Every random draw flows through `make_rng` / `seeded()`.
 - **Computed tokens.** Never hand-author manuscript metrics; every
-  `{{TOKEN}}` comes from `manuscript/config.yaml` via
+  `{{TOKEN}}` comes from `docs/manuscript/config.yaml` via
   `src/bond_utilities/manuscript_variables.py`.
 - **Publish via the vault.** One remote (`github.com/docxology/bond-utilities`)
   on `main`; publish from the parent vault workspace, never force-push.
@@ -53,5 +53,5 @@ uv run python scripts/z_generate_manuscript_variables.py
 ## Cross-references
 
 - Agent rules: `docs/agent_instructions.md`
-- Layer contract: `manuscript/layer_contract.yaml`
+- Layer contract: `docs/manuscript/layer_contract.yaml`
 - Skill bundle index: `.agents/skills/AGENTS.md`

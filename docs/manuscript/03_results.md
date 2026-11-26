@@ -23,9 +23,9 @@ qualification cannot quietly stop being true. `kasiski_key_lengths` returns the
 true key length among its candidates for repeated plaintext, and
 `index_of_coincidence` cleanly separates repetitive (more-structured) text from
 uniform random text. The figure
-`[@fig:freq]` shows the A-Z counts of the mission codename sample.
+[@fig:freq] shows the A-Z counts of the mission codename sample.
 
-![Letter frequency of the codename sample.](../output/figures/letter_frequency.png){#fig:freq width=70%}
+![Letter frequency of the codename sample.](../../output/figures/letter_frequency.png){#fig:freq width=70%}
 
 ## Edge-case robustness
 
@@ -108,4 +108,4 @@ The primary mission window spans {{RESULT_WINDOW_HOURS}} hours, from
 hand-authored. Window math is exact under the half-open `[start, end)`
 semantics; elapsed and remaining durations clamp at zero.
 
-![Mission schedule window with the reference "now" marker.](../output/figures/mission_schedule.png){#fig:schedule width=80%}
+![Mission schedule window with the reference "now" marker.](../../output/figures/mission_schedule.png){#fig:schedule width=80%}

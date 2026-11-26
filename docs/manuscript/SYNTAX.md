@@ -9,7 +9,7 @@ live cross-reference test
 `tests/test_manuscript_variables.py::TestManuscriptCrossReference` gates
 completeness.
 
-Known tokens (generated from `manuscript/config.yaml`):
+Known tokens (generated from `docs/manuscript/config.yaml`):
 
 | Token | Source |
 | --- | --- |

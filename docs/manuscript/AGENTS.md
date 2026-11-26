@@ -1,4 +1,4 @@
-# Manuscript (`manuscript/`)
+# Manuscript (`docs/manuscript/`)
 
 BOND suite — bond-utilities (codename Q-BRANCH) manuscript source tree.
 

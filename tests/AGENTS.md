@@ -21,7 +21,7 @@ never from a document).
 | `test_manuscript_variables.py` | Token map + `{{TOKEN}}` cross-reference |
 | `test_figures.py` | Schedule + frequency figure PNG output, and byte-determinism for **both** figures (the schedule one at an explicit `now`, with a negative control) |
 | `test_scripts_smoke.py` | Subprocess smoke of CLI scripts |
-| `test_documented_examples.py` | Every worked example in `README.md`, `AGENTS.md` and `docs/quickstart.md` executed for real and matched against its quoted output, plus the documented short-text failures and the two corrected bibliography claims |
+| `test_documented_examples.py` | Quoted cipher and codename examples, short-text failures, and the bibliography annotations |
 
 ## Run
 

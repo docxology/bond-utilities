@@ -130,6 +130,11 @@ class TestZGenerateManuscriptVariables:
         assert fig.stat().st_size > 0
         assert freq.stat().st_size > 0
         assert proc.stdout.count("rendered figure ->") == 2
+        registry = json.loads((fig.parent / "figure_registry.json").read_text(encoding="utf-8"))
+        assert {label: item["filename"] for label, item in registry.items()} == {
+            "fig:schedule": fig.name,
+            "fig:freq": freq.name,
+        }
 
     def test_no_figure_flag_renders_no_figures(self, tmp_path: Path) -> None:
         """`--no-figure` must actually skip rendering, not merely exit zero."""

@@ -7,6 +7,7 @@
 | `output/data/manuscript_variables.json` | `scripts/z_generate_manuscript_variables.py` |
 | `output/figures/mission_schedule.png` | same script → `src/bond_utilities/figures/plots.py::plot_mission_schedule` |
 | `output/figures/letter_frequency.png` | same script → `plots.plot_frequency_analysis` |
+| `output/figures/figure_registry.json` | same script → figure labels and filenames |
 
 All artifacts are regenerated, never hand-edited. Regeneration is a single
 command:
@@ -17,7 +18,7 @@ uv run python scripts/z_generate_manuscript_variables.py
 
 Running that command twice on the same commit rewrites every artifact above
 **byte for byte**. Nothing in the pipeline reads the wall clock: the token map
-is a pure function of `manuscript/config.yaml` and the library registries, and
+is a pure function of `docs/manuscript/config.yaml` and the library registries, and
 the schedule figure's reference marker is pinned to `paper.date` through
 `manuscript_variables.manuscript_instant()` rather than to `datetime.now()`.
 The claim is bound by `tests/test_regeneration_determinism.py`, which runs the
@@ -44,14 +45,14 @@ the wider environment, which the experimental-setup section pins separately.
 
 ```bash
 uv run pytest tests/ --cov=src --cov-fail-under=90
-uv run ruff check src/ scripts/
-uv run ruff format --check src/ scripts/
-uv run mypy src/ scripts/
+uv run --with ruff ruff check src/ scripts/
+uv run --with ruff ruff format --check src/ scripts/
+uv run --with mypy --with types-PyYAML mypy src/ scripts/
 ```
 
 The gate enforces at least {{COVERAGE_GATE_PERCENT}}% line **and** branch
 coverage on `src/`, and tolerates at most {{MAX_TEST_FAILURES}} failing tests.
-Both numbers come from `manuscript/config.yaml`, and a test asserts the
+Both numbers come from `docs/manuscript/config.yaml`, and a test asserts the
 coverage figure equals the `fail_under` value actually enforced by
 `pyproject.toml` — the prose cannot drift away from the enforced gate. The
 measured coverage of any given run is deliberately not quoted here; run the

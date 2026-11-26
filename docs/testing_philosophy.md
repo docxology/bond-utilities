@@ -93,7 +93,7 @@ tests exist specifically to be falsifiable:
 | `test_regeneration_determinism.py` | Two full runs of `scripts/z_generate_manuscript_variables.py`, whole-tree and per-file digests compared, plus a scan for tokens holding today's date |
 | `test_figures.py` | Real PNG output (schedule + frequency), deterministic bytes, default path, error branches |
 | `test_scripts_smoke.py` | Subprocess smoke of every thin CLI, including flag behaviour and artifact anchoring |
-| `test_documented_examples.py` | Every worked example printed in `README.md`, `AGENTS.md` and `docs/quickstart.md`, executed against the live functions and cross-checked against the quoted text; plus the short-text failure cases and the two corrected bibliography claims |
+| `test_documented_examples.py` | Every worked example printed in `docs/library.md`, `AGENTS.md` and `docs/quickstart.md`, executed against the live functions and cross-checked against the quoted text; plus the short-text failure cases and the two corrected bibliography claims |
 
 ## Determinism
 
@@ -109,5 +109,5 @@ surface hangs off `src/bond_utilities/testing.py`: two pytest fixtures
 ## Reference
 
 - Fixture inventory: [`tests/AGENTS.md`](../tests/AGENTS.md)
-- Patterns: [`tests/PATTERNS.md`](../tests/PATTERNS.md)
+- Patterns: [`tests/PATTERNS.md`](test_patterns.md)
 - Architecture and module contracts: [`architecture.md`](architecture.md)

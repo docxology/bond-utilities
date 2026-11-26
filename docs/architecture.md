@@ -40,7 +40,7 @@ reproducibility surface that mission outcomes land on:
 ## Dependency shape
 
 ```
-manuscript/config.yaml                     (mission parameters — the only inputs)
+docs/manuscript/config.yaml                     (mission parameters — the only inputs)
         │
         ▼
 src/bond_utilities/                        scripts/ (thin CLIs)        tests/
@@ -122,7 +122,7 @@ its own byte source — one seed, one path, byte-identical results.
 `codename_token` derives a stable truncated SHA-256 token from a name and seed.
 
 **Not a security product.** These are educational and deterministic; the module
-docstring and `manuscript/07_scope_and_related_work.md` both say so explicitly.
+docstring and `docs/manuscript/07_scope_and_related_work.md` both say so explicitly.
 
 ### `codenames.py` — deterministic naming
 
@@ -192,7 +192,7 @@ in the signature would freeze the interpreter's original stdout at import.
 
 ### `manuscript_variables.py` — config to `{{TOKEN}}`s
 
-Reads `manuscript/config.yaml` and computes the whole token map by calling the
+Reads `docs/manuscript/config.yaml` and computes the whole token map by calling the
 primitives (`parse_schedule`, `windows_overlap`, `generate_codenames`,
 `codenames_by_scheme`, `nato_codename`) plus the registry constants
 (`CIPHER_NAMES`, `CRYPTANALYSIS_HELPERS`, `CODENAME_SCHEMES`, `SEEDED_HELPERS`,

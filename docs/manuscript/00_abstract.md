@@ -21,7 +21,7 @@ outcome can be re-derived from its stored inputs.
 
 Every quantity this manuscript claims about the package — counts, capacities,
 window durations, sample outputs, and gate thresholds — arrives as a
-generated token computed from `manuscript/config.yaml` and the live registries by
+generated token computed from `docs/manuscript/config.yaml` and the live registries by
 `src/bond_utilities/manuscript_variables.py`. Three tests enforce that: a
 cross-reference test fails on any prose token the generator does not produce; a
 bare-numeral guard fails on any hand-authored number in the abstract,

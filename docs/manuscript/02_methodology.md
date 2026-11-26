@@ -35,9 +35,10 @@ crash or silent corruption.
 
 - `letter_frequency` / `frequency_normalized` — A-Z counts and relative
   frequencies.
-- `index_of_coincidence` — Friedman's IC: ~0.066 for natural English vs
-  ~0.038 for uniform random, used to distinguish substitution from
-  polyalphabetic text.
+- `index_of_coincidence` measures how often randomly selected letters
+  coincide [@friedman_1922]. The English letter-frequency model has a higher
+  expected coincidence rate than a uniform alphabet. The CLI reports the
+  statistic as a diagnostic.
 - `english_chi_squared` — chi-squared fit of letter frequencies against
   standard English.
 - `caesar_shift_scores` / `caesar_break` — score all 26 shifts by chi-squared

@@ -1,4 +1,4 @@
-"""Manuscript ``{{TOKEN}}`` generation from ``manuscript/config.yaml``.
+"""Manuscript ``{{TOKEN}}`` generation from ``docs/manuscript/config.yaml``.
 
 Tokens are computed, never hand-authored in prose: every value either comes
 straight from the mission config or is derived deterministically from it by
@@ -36,7 +36,7 @@ DEFAULT_COVERAGE_GATE_PERCENT = 90
 DEFAULT_MAX_TEST_FAILURES = 0
 
 #: Manuscript config path, relative to the project root.
-CONFIG_RELATIVE = Path("manuscript") / "config.yaml"
+CONFIG_RELATIVE = Path("docs") / "manuscript" / "config.yaml"
 
 
 def load_mission_config(project_root: str | Path | None = None) -> dict[str, Any]:
@@ -55,6 +55,9 @@ def load_mission_config(project_root: str | Path | None = None) -> dict[str, Any
     """
     root = Path(project_root) if project_root is not None else Path(__file__).resolve().parents[2]
     config_path = root / CONFIG_RELATIVE
+    legacy_path = root / "manuscript" / "config.yaml"
+    if not config_path.exists() and legacy_path.is_file():
+        config_path = legacy_path
     with config_path.open("r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
     if not isinstance(config, dict):
@@ -76,7 +79,7 @@ def manuscript_instant(config: dict[str, Any]) -> datetime:
     different, still-green answer.
 
     Args:
-        config: Parsed ``manuscript/config.yaml`` mapping.
+        config: Parsed ``docs/manuscript/config.yaml`` mapping.
 
     Returns:
         The reference instant, timezone-aware in UTC.
@@ -120,7 +123,7 @@ def generate_variables(
     Args:
         config: Pre-loaded config mapping (avoids re-reading the file in
             tests); defaults to :func:`load_mission_config`.
-        project_root: Root used to locate ``manuscript/config.yaml``.
+        project_root: Root used to locate ``docs/manuscript/config.yaml``.
 
     Returns:
         Mapping of token name to rendered string value.

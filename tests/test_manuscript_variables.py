@@ -44,6 +44,17 @@ class TestLoadConfig:
         with pytest.raises(FileNotFoundError):
             load_mission_config(tmp_path)
 
+    def test_canonical_config_takes_precedence_over_legacy(self, tmp_path: Path) -> None:
+        legacy = tmp_path / "manuscript" / "config.yaml"
+        legacy.parent.mkdir()
+        legacy.write_text("paper: {version: legacy}\n", encoding="utf-8")
+        assert load_mission_config(tmp_path)["paper"]["version"] == "legacy"
+
+        canonical = tmp_path / CONFIG_RELATIVE
+        canonical.parent.mkdir(parents=True)
+        canonical.write_text("paper: {version: canonical}\n", encoding="utf-8")
+        assert load_mission_config(tmp_path)["paper"]["version"] == "canonical"
+
     def test_non_mapping_raises(self, tmp_path: Path) -> None:
         cfg = tmp_path / "config.yaml"
         cfg.write_text("- just\n- a\n- list\n")
@@ -214,7 +225,7 @@ class TestManuscriptInstant:
         assert v["RESULT_CODENAME_SAMPLE"] == ", ".join(direct)
 
     def test_loads_from_project_root_when_no_config(self) -> None:
-        # Uses the real manuscript/config.yaml via the default project_root.
+        # Uses the real docs/manuscript/config.yaml via the default project_root.
         v = generate_variables(project_root=PROJECT_ROOT)
         assert v["MISSION_CODENAME"] == "Q-BRANCH"
 
@@ -268,7 +279,7 @@ class TestManuscriptCrossReference:
         # Scan only the numbered manuscript prose sections (00..07, 99), not the
         # guide files (AGENTS.md / SYNTAX.md) that legitimately mention the
         # generic {{TOKEN}} / {{VARIABLE}} placeholders.
-        for section in sorted((PROJECT_ROOT / "manuscript").glob("[0-9]*.md")):
+        for section in sorted((PROJECT_ROOT / CONFIG_RELATIVE.parent).glob("[0-9]*.md")):
             text = section.read_text(encoding="utf-8")
             used.update(re.findall(r"\{\{([A-Z0-9_]+)\}\}", text))
         assert used, "manuscript uses no tokens (nothing to cross-reference)"
@@ -351,7 +362,7 @@ METRIC_SCAN_EXCLUSIONS = ("99_references.md",)
 
 def _manuscript_sections() -> list[Path]:
     """Every numbered manuscript prose section, in order."""
-    return sorted((PROJECT_ROOT / "manuscript").glob("[0-9]*.md"))
+    return sorted((PROJECT_ROOT / CONFIG_RELATIVE.parent).glob("[0-9]*.md"))
 
 
 def _metric_scanned_sections() -> list[Path]:
@@ -385,7 +396,7 @@ class TestNoHandAuthoredNumbers:
 
         offenders: list[str] = []
         for name in QUANTITATIVE_SECTIONS:
-            section = PROJECT_ROOT / "manuscript" / name
+            section = PROJECT_ROOT / CONFIG_RELATIVE.parent / name
             assert section.exists(), f"missing manuscript section {name}"
             for line_number, line in enumerate(_strip_non_prose(section.read_text()).splitlines(), 1):
                 if re.search(r"\d", line):
@@ -459,7 +470,7 @@ class TestGateNumbersAgreeWithEnforcement:
 
         match = re.search(r'requires-python\s*=\s*">=([\d.]+)"', self._pyproject())
         assert match, "pyproject.toml has no requires-python floor"
-        setup = (PROJECT_ROOT / "manuscript" / "05_experimental_setup.md").read_text(encoding="utf-8")
+        setup = (PROJECT_ROOT / CONFIG_RELATIVE.parent / "05_experimental_setup.md").read_text(encoding="utf-8")
         assert f"Python ≥ {match.group(1)}" in setup
 
 

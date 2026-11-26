@@ -29,7 +29,7 @@ from bond_utilities.codenames import nato_codename, numeric_codename
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-#: The letter-rich sample the README and AGENTS.md both quote.
+#: The letter-rich sample the library guide and AGENTS.md both quote.
 LETTER_RICH_SAMPLE = (
     "THEQUICKBROWNFOXJUMPSOVERTHELAZYDOGANDTHENGATHERSGRACEFULACORNS"
     "FROMEVERYMAPLETREEBYTHERIVERBANKWHILETHEHUNTERSLEEPSSILENTLYIN"
@@ -72,27 +72,27 @@ class TestQuickstartExamples:
         assert "'QUEBEC-BRAVO-7'" in _read("docs/quickstart.md")
 
 
-class TestReadmeExamples:
-    """`README.md` — "Ciphers + cryptanalysis" and codename blocks."""
+class TestLibraryGuideExamples:
+    """`docs/library.md` — "Ciphers + cryptanalysis" and codename blocks."""
 
     def test_caesar_break_short_english_phrase(self) -> None:
         assert caesar_break(caesar_encrypt("ATTACK AT DAWN", 5)) == (5, "ATTACK AT DAWN")
-        assert "(5, 'ATTACK AT DAWN')" in _read("README.md")
+        assert "(5, 'ATTACK AT DAWN')" in _read("docs/library.md")
 
     def test_vigenere_recovers_key_on_the_documented_sample(self) -> None:
         cipher = vigenere_encrypt(LETTER_RICH_SAMPLE, "LEMON")
         key, decoded = vigenere_break(cipher, 5)
         assert key == "LEMON"
         assert decoded == LETTER_RICH_SAMPLE
-        assert "key == 'LEMON', decoded == sample" in _read("README.md")
+        assert "key == 'LEMON', decoded == sample" in _read("docs/library.md")
 
     def test_documented_sample_length(self) -> None:
         assert len(LETTER_RICH_SAMPLE) == 202
-        assert "202 letters" in _read("README.md")
+        assert "202 letters" in _read("docs/library.md")
 
     def test_numeric_codename_value(self) -> None:
         assert numeric_codename("M-001", seed=7) == "QB-B6050C24"
-        assert "'QB-B6050C24'" in _read("README.md")
+        assert "'QB-B6050C24'" in _read("docs/library.md")
 
 
 class TestAgentsExamples:
@@ -147,7 +147,7 @@ class TestRecoveryIsLengthDependent:
 
 
 class TestBibliographyClaimsMatchTheCode:
-    """`manuscript/99_references.md` annotates each source with a code claim.
+    """`docs/manuscript/99_references.md` annotates each source with a code claim.
 
     Two of those annotations were false: friedman_1922 claimed the index of
     coincidence scores candidate key lengths inside `vigenere_break`, and
@@ -202,6 +202,6 @@ class TestBibliographyClaimsMatchTheCode:
         assert updated["outcomes"]["consumed"] is True
 
     def test_references_state_the_corrected_claims(self) -> None:
-        text = _read("manuscript/99_references.md")
+        text = _read("docs/manuscript/99_references.md")
         assert "does **not** consult the IC" in text
         assert "writes no timestamp of its own" in text

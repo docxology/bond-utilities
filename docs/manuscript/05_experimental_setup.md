@@ -2,7 +2,7 @@
 
 ## Mission parameters
 
-All values are read from `manuscript/config.yaml` by
+All values are read from `docs/manuscript/config.yaml` by
 `src/bond_utilities/manuscript_variables.py::generate_variables()`; scripts
 never hardcode them.
 

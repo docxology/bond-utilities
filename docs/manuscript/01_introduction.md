@@ -1,7 +1,7 @@
 # Introduction
 
-`bond-utilities` is Layer 0 of the BOND suite: the shared, dependency-free
-foundation imported by every other bond package. It deliberately keeps its
+`bond-utilities` is the shared Layer Zero foundation of the BOND suite.
+It has no dependencies on other BOND packages. It deliberately keeps its
 dependency surface to the standard library plus `numpy`, `matplotlib`, and
 `pyyaml`, and it never imports a mock framework.
 
