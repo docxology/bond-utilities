@@ -13,6 +13,10 @@ This tree is its own git repo (branch `main`) with one remote,
 parent workspace — never add a remote ad hoc, never push to another branch,
 never force-push.
 
+Use the [source guidance](src/AGENTS.md), [script guidance](scripts/AGENTS.md),
+[test guidance](tests/AGENTS.md), and [documentation guidance](docs/AGENTS.md)
+for the area you are changing.
+
 ## Layer contract
 
 | Surface | Rule |
@@ -44,7 +48,7 @@ matplotlib + pyyaml`, `tests/ → src/`. See
 ## Installation
 
 ```bash
-uv sync --extra dev
+uv sync --locked --extra dev --python 3.14
 ```
 
 ## Usage examples
